@@ -4324,3 +4324,476 @@ _**Agent (model gpt-5.3-codex, mode Agent)**_
 
 ---
 
+我看到了！GET 處理器調用的是 `documentService.getDocument(documentId, userId)`，但讓我檢查前端是如何調用的：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\pages\DocumentReviewPage.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+前端調用看起來是正確的。讓我檢查 preload 中的 API 定義：
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "document.*get",
+  "path": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\preload",
+  "outputMode": "content",
+  "context": 5,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "document.*get",
+  "path": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\preload",
+  "outputMode": "content",
+  "totalFiles": 2,
+  "totalMatches": 4,
+  "topFiles": [
+    {
+      "uri": "desktop/src/preload/ipc/channels.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "desktop/src/preload/index.ts",
+      "matchCount": 18
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+讓我直接讀取 preload 文件：
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **2** results in **1** directory</summary>
+
+Directory: **C:\Users\fortu\Desktop\Project\Demo\desktop\src\preload** (2 files)
+
+| File |
+|------|
+| `desktop/src/preload/index.ts` |
+| `desktop/src/preload/ipc/channels.ts` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\preload\index.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+讓我繼續查看 document API 的定義：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\preload\index.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+好的！preload 中的 `document.get` 定義是正確的。現在讓我添加更多調試信息來看看實際發生了什麼：
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+讓我重新讀取並檢查實際內容：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\pages\DocumentReviewPage.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+好的，讓我添加調試日誌：
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+讓我使用 Shell 命令來添加調試日誌：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; (Get-Content src\renderer\pages\DocumentReviewPage.tsx -Raw -Encoding UTF8) -replace "const response = await window\.api\.document\.get\(", "console.log('Loading document:', { documentId, userId });`n      const response = await window.api.document.get(" -replace "if \(response\.success && response\.data\) \{`n        setDocument\(response\.data\);", "console.log('Document response:', response);`n      if (response.success && response.data) {`n        console.log('Document loaded successfully:', response.data);`n        setDocument(response.data);" -replace "message\.error\(response\.message \|\| '獲取文檔失敗'\);", "console.error('Failed to load document:', response.message);`n        message.error(response.message || '獲取文檔失敗');" | Set-Content src\renderer\pages\DocumentReviewPage.tsx -Encoding UTF8</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; (Get-Content src\renderer\pages\DocumentReviewPage.tsx -Raw -Encoding UTF8) -replace "const response = await window\.api\.document\.get\(", "console.log('Loading document:', { documentId, userId });`n      const response = await window.api.document.get(" -replace "if \(response\.success && response\.data\) \{`n        setDocument\(response\.data\);", "console.log('Document response:', response);`n      if (response.success && response.data) {`n        console.log('Document loaded successfully:', response.data);`n        setDocument(response.data);" -replace "message\.error\(response\.message \|\| '獲取文檔失敗'\);", "console.error('Failed to load document:', response.message);`n        message.error(response.message || '獲取文檔失敗');" | Set-Content src\renderer\pages\DocumentReviewPage.tsx -Encoding UTF8
+```
+</details>
+</tool-use>
+
+---
+
+現在讓我重新編譯:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build 2>&1 | Select-String -Pattern "error|Error|✓ built" | Select-Object -Last 5</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build 2>&1 | Select-String -Pattern "error|Error|✓ built" | Select-Object -Last 5
+```
+</details>
+</tool-use>
+
+---
+
+讓我完整編譯：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build
+```
+
+```
+
+&gt; contract-risk-management@1.0.0 build
+&gt; npm run build:main &amp;&amp; npm run build:renderer
+
+
+&gt; contract-risk-management@1.0.0 build:main
+&gt; tsc -p tsconfig.json &amp;&amp; tsc-alias -p tsconfig.json
+
+
+&gt; contract-risk-management@1.0.0 build:renderer
+&gt; vite build --config vite.renderer.config.mjs
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3082 modules transformed.
+rendering chunks...
+computing gzip size...
+../../dist/renderer/index.html                     0.53 kB │ gzip:   0.39 kB
+../../dist/renderer/assets/index-C5gI11eR.css     14.94 kB │ gzip:   3.32 kB
+../../dist/renderer/assets/index--A8oKh4z.js   1,155.82 kB │ gzip: 369.94 kB │ map: 5,322.82 kB
+✓ built in 15.52s
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+```
+</details>
+</tool-use>
+
+---
+
+編譯成功！現在讓我提交這個版本：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "debug: 添加更多調試日誌到 loadDocument 方法
+
+- 添加 document.get 調用前的參數日誌
+- 添加響應結果日誌
+- 添加成功/失敗的詳細日誌
+- 幫助診斷為什麼顯示加載文檔失敗"; git push</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "debug: 添加更多調試日誌到 loadDocument 方法
+
+- 添加 document.get 調用前的參數日誌
+- 添加響應結果日誌
+- 添加成功/失敗的詳細日誌
+- 幫助診斷為什麼顯示加載文檔失敗"; git push
+```
+
+```
+[main 04ad1eb] debug: 添加更多調試日誌到 loadDocument 方法
+ 2 files changed, 286 insertions(+), 1 deletion(-)
+warning: in the working copy of 'desktop/src/renderer/pages/DocumentReviewPage.tsx', LF will be replaced by CRLF the next time Git touches it
+To https://github.com/peterRD5113/demo.git
+   f97c8cb..04ad1eb  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+完成！現在請您：
+
+## 下一步操作
+
+1. **重新啟動應用程式**
+2. **打開開發者工具**（按 F12）
+3. **切換到 Console 標籤**
+4. **點擊文檔進入審閱頁面**
+5. **查看控制台輸出**
+
+控制台應該會顯示詳細的調試信息：
+
+```
+Loading document: { documentId: "1", userId: 1 }
+Document response: { success: false/true, message: "...", data: {...} }
+```
+
+如果顯示 `success: false`，請告訴我 `message` 的內容是什麼。
+
+同時，也請查看：
+```
+Loading clauses for documentId: 1
+Clauses response: {...}
+Loaded clauses: 23 [...]
+Loading risks for documentId: 1
+Risk list response: {...}
+Loaded risks: 7 [...]
+```
+
+這些日誌會告訴我們：
+- 文檔是否成功加載
+- 條款是否成功加載
+- 風險是否成功加載
+- 具體的錯誤訊息是什麼
+
+請將控制台的完整輸出截圖或複製給我，這樣我就能準確診斷問題所在。
+
+---
+
+_**User**_
+
+我按 F12 沒效果？
+
+---
+
+_**Agent (model gpt-5.3-codex, mode Agent)**_
+
+在 Electron 應用程式中，開發者工具可能需要通過菜單打開。讓我檢查應用程式的菜單配置：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\index.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+我看到了！開發者工具只在開發模式下自動打開。讓我添加一個菜單選項來手動打開開發者工具：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\index.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+讓我添加一個快捷鍵和菜單來打開開發者工具：
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\index.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+好的！現在讓我重新編譯：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build
+```
+
+```
+
+&gt; contract-risk-management@1.0.0 build
+&gt; npm run build:main &amp;&amp; npm run build:renderer
+
+
+&gt; contract-risk-management@1.0.0 build:main
+&gt; tsc -p tsconfig.json &amp;&amp; tsc-alias -p tsconfig.json
+
+
+&gt; contract-risk-management@1.0.0 build:renderer
+&gt; vite build --config vite.renderer.config.mjs
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3082 modules transformed.
+rendering chunks...
+computing gzip size...
+../../dist/renderer/index.html                     0.53 kB │ gzip:   0.39 kB
+../../dist/renderer/assets/index-C5gI11eR.css     14.94 kB │ gzip:   3.32 kB
+../../dist/renderer/assets/index--A8oKh4z.js   1,155.82 kB │ gzip: 369.94 kB │ map: 5,322.82 kB
+✓ built in 11.01s
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+```
+</details>
+</tool-use>
+
+---
+
+編譯成功！讓我提交並推送：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "feat: 添加 F12 快捷鍵打開開發者工具
+
+- 添加 before-input-event 監聽器
+- 支持 F12 或 Ctrl+Shift+I 切換開發者工具
+- 方便調試和查看控制台日誌"; git push</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "feat: 添加 F12 快捷鍵打開開發者工具
+
+- 添加 before-input-event 監聽器
+- 支持 F12 或 Ctrl+Shift+I 切換開發者工具
+- 方便調試和查看控制台日誌"; git push
+```
+
+```
+[main 4f38b57] feat: 添加 F12 快捷鍵打開開發者工具
+ 1 file changed, 14 insertions(+)
+warning: in the working copy of 'desktop/src/main/index.ts', LF will be replaced by CRLF the next time Git touches it
+To https://github.com/peterRD5113/demo.git
+   04ad1eb..4f38b57  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+Optimizing conversation history
+
+---
+
+完成！現在請您：
+
+## 下一步操作
+
+1. **重新啟動應用程式**
+2. **按 F12 鍵**（或 Ctrl+Shift+I）打開開發者工具
+3. **切換到 Console 標籤**
+4. **點擊文檔進入審閱頁面**
+5. **查看控制台輸出**
+
+現在 F12 應該可以正常工作了！
+
+控制台會顯示詳細的調試信息：
+- `Loading document: { documentId: "1", userId: 1 }`
+- `Document response: { success: ..., message: "...", data: {...} }`
+- `Loading clauses for documentId: 1`
+- `Clauses response: {...}`
+- `Loading risks for documentId: 1`
+- `Risk list response: {...}`
+
+請將控制台的輸出截圖或複製給我，這樣我就能看到具體是哪個環節出了問題。
+
+---
+
+_**User**_
+
+@c:\Users\fortu\.cursor\projects\c-Users-fortu-Desktop-Project-Demo\terminals\1.txt:690-730 我也沒看到在哪裡有F12
+
+---
+
+_**Agent (model gpt-5.3-codex, mode Agent)**_
+
+我看到了兩個問題：
+
+## 1. F12 的問題
+F12 快捷鍵已經添加到代碼中了，但您需要**重新啟動應用程式**才能生效。請完全關閉應用程式，然後重新啟動。
+
+## 2. 更嚴重的問題：資料庫缺少 `deleted_at` 欄位
+
+從日誌中看到：
+```
+Error: no such column: deleted_at
+```
+
+這是因為 `documents` 表缺少 `deleted_at` 欄位。讓我檢查並修復：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\database\connection.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+讓我繼續查看 documents 表的定義：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\database\connection.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
