@@ -116,7 +116,7 @@ class RiskService {
                 rule.id,
                 rule.risk_level,
                 clause.content.substring(0, 200), // Take first 200 chars as matched text
-                rule.suggestion
+                rule.description || '' // Use description as suggestion
               );
 
               risksFound++;
