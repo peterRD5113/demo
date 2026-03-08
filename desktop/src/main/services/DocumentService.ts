@@ -5,6 +5,8 @@
  */
 
 import { documentRepository, projectRepository } from '@main/repositories';
+import { documentParserService } from './DocumentParserService';
+import { riskService } from './RiskService';
 import type { Document } from '@shared/types';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -88,16 +90,62 @@ class DocumentService {
       const documentId = documentRepository.createDocument(
         data.projectId,
         data.name,
-        data.filePath,
+        path.basename(data.filePath), // originalName
         data.fileType,
-        fileSize
+        fileSize,
+        data.filePath
       );
 
-      return {
-        success: true,
-        message: 'Document created successfully',
-        documentId
-      };
+      // 🔥 階段1：自動解析文檔
+      console.log(`開始解析文檔 ID: ${documentId}`);
+      
+      // 更新狀態為 processing
+      documentRepository.updateStatus(documentId, 'processing');
+
+      // 調用解析服務
+      const parseResult = await documentParserService.parseDocument(
+        documentId,
+        data.filePath,
+        data.fileType
+      );
+
+      if (parseResult.success) {
+        // 解析成功，更新狀態為 completed
+        documentRepository.updateStatus(documentId, 'completed');
+        console.log(`文檔解析成功，共提取 ${parseResult.clauseCount} 個條款`);
+        
+        // 🔥 階段2：自動進行風險識別
+        console.log(`開始風險識別 - 文檔 ID: ${documentId}`);
+        const riskResult = await riskService.identifyRisks(documentId, data.userId);
+        
+        if (riskResult.success) {
+          console.log(`風險識別完成，發現 ${riskResult.risksFound} 個風險`);
+          
+          return {
+            success: true,
+            message: `Document processed successfully: ${parseResult.clauseCount} clauses extracted, ${riskResult.risksFound} risks identified`,
+            documentId
+          };
+        } else {
+          console.warn(`風險識別失敗: ${riskResult.message}`);
+          
+          return {
+            success: true,
+            message: `Document parsed successfully (${parseResult.clauseCount} clauses), but risk identification failed: ${riskResult.message}`,
+            documentId
+          };
+        }
+      } else {
+        // 解析失敗，更新狀態為 failed
+        documentRepository.updateStatus(documentId, 'failed', parseResult.message);
+        console.error(`文檔解析失敗: ${parseResult.message}`);
+        
+        return {
+          success: true,
+          message: `Document created but parsing failed: ${parseResult.message}`,
+          documentId
+        };
+      }
     } catch (error) {
       console.error('Create document failed:', error);
       

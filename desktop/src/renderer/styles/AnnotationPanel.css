@@ -1,0 +1,158 @@
+/* 批註面板樣式 */
+.annotation-panel {
+  position: fixed;
+  right: 0;
+  top: 64px;
+  bottom: 0;
+  width: 400px;
+  background: #fff;
+  border-left: 1px solid #f0f0f0;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.annotation-panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafafa;
+}
+
+.annotation-panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.annotation-panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* 批註列表 */
+.annotations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 批註卡片 */
+.annotation-card {
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s;
+}
+
+.annotation-card:hover {
+  border-color: #d9d9d9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.annotation-card.resolved {
+  background-color: #f6ffed;
+  border-color: #b7eb8f;
+}
+
+.annotation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.annotation-author {
+  font-weight: 600;
+  color: #262626;
+  font-size: 13px;
+}
+
+.annotation-time {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.annotation-content {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #262626;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 8px;
+}
+
+/* @mention 高亮 */
+.mention-highlight {
+  color: #1890ff;
+  font-weight: 600;
+  background-color: #e6f7ff;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+/* 批註操作按鈕 */
+.annotation-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* 編輯模式 */
+.annotation-edit {
+  margin-top: 8px;
+}
+
+.annotation-edit .ant-input {
+  margin-bottom: 8px;
+}
+
+/* 添加批註表單 */
+.annotation-form {
+  margin-top: 16px;
+  border: 2px dashed #d9d9d9;
+}
+
+.annotation-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 滾動條樣式 */
+.annotation-panel-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.annotation-panel-content::-webkit-scrollbar-track {
+  background: #f0f0f0;
+}
+
+.annotation-panel-content::-webkit-scrollbar-thumb {
+  background: #bfbfbf;
+  border-radius: 3px;
+}
+
+.annotation-panel-content::-webkit-scrollbar-thumb:hover {
+  background: #8c8c8c;
+}
+
+/* 響應式調整 */
+@media (max-width: 1200px) {
+  .annotation-panel {
+    width: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .annotation-panel {
+    width: 100%;
+    left: 0;
+  }
+}

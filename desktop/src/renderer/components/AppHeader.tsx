@@ -1,17 +1,44 @@
 // @ts-nocheck
-import React from 'react';
-import { Layout, Menu, Dropdown, Avatar, Button } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined, HomeOutlined } from '@ant-design/icons';
+import React, { useEffect, useState } from 'react';
+import { Layout, Menu, Dropdown, Avatar, Button, Badge } from 'antd';
+import { UserOutlined, LogoutOutlined, SettingOutlined, HomeOutlined, BellOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useProject } from '../contexts/ProjectContext';
 import type { MenuProps } from 'antd';
 
 const { Header } = Layout;
 
 const AppHeader: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, currentUser } = useAuth();
+  const { currentProject } = useProject();
   const navigate = useNavigate();
   const location = useLocation();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (currentUser && currentProject) {
+      loadUnreadCount();
+    }
+  }, [currentUser, currentProject]);
+
+  const loadUnreadCount = async () => {
+    if (!currentUser || !currentProject) return;
+
+    try {
+      const result = await window.api.annotation.getMentions(
+        currentUser.id,
+        currentProject.id
+      );
+
+      if (result.success && result.data) {
+        const pending = result.data.filter((m: any) => m.status === 'pending');
+        setUnreadCount(pending.length);
+      }
+    } catch (error) {
+      console.error('載入未讀數量失敗:', error);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -42,6 +69,16 @@ const AppHeader: React.FC = () => {
       icon: <HomeOutlined />,
       label: 'Projects',
       onClick: () => navigate('/projects'),
+    },
+    {
+      key: '/mentions',
+      icon: <BellOutlined />,
+      label: (
+        <Badge count={unreadCount} offset={[10, 0]}>
+          <span>待確認清單</span>
+        </Badge>
+      ),
+      onClick: () => navigate('/mentions'),
     },
   ];
 

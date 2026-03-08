@@ -15,5 +15,5 @@ export {
   riskMatchRepository,
 } from './RiskRepository';
 
-// §O¦W¡G¬°¤F¦V«á­Ý®e¡AriskRepository «ü¦V riskRuleRepository
+// ï¿½Oï¿½Wï¿½Gï¿½ï¿½ï¿½Fï¿½Vï¿½ï¿½Ý®eï¿½AriskRepository ï¿½ï¿½ï¿½V riskRuleRepository
 export { riskRuleRepository as riskRepository } from './RiskRepository';

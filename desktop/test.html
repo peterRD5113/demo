@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>測試頁面</title>
+</head>
+<body>
+  <h1>測試頁面</h1>
+  <div id="test-output"></div>
+  
+  <script>
+    console.log('========================================');
+    console.log('Test HTML loaded');
+    console.log('window.electronAPI:', window.electronAPI);
+    console.log('typeof window.electronAPI:', typeof window.electronAPI);
+    
+    const output = document.getElementById('test-output');
+    
+    if (window.electronAPI) {
+      output.innerHTML = '<p style="color: green;">✅ electronAPI is available!</p>';
+      output.innerHTML += '<p>test: ' + window.electronAPI.test + '</p>';
+      output.innerHTML += '<p>version: ' + window.electronAPI.version + '</p>';
+      
+      if (window.electronAPI.ping) {
+        const result = window.electronAPI.ping();
+        output.innerHTML += '<p>ping result: ' + result + '</p>';
+      }
+    } else {
+      output.innerHTML = '<p style="color: red;">❌ electronAPI is NOT available!</p>';
+    }
+    
+    console.log('Test script completed');
+    console.log('========================================');
+  </script>
+</body>
+</html>

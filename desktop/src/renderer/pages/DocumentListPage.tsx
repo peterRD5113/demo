@@ -45,35 +45,60 @@ const DocumentListPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const { token } = useAuth();
-  const { currentProject, setCurrentDocument } = useProject();
+  const { currentProject, setCurrentProject, setCurrentDocument } = useProject();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (projectId) {
+    if (projectId && token) {
+      loadProjectInfo();
       loadDocuments();
     }
-  }, [projectId]);
+  }, [projectId, token]);
+
+  const loadProjectInfo = async () => {
+    if (!token || !projectId) return;
+
+    try {
+      const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+      const userId = tokenPayload.userId;
+
+      const response = await window.electronAPI.project.get(
+        parseInt(projectId),
+        userId
+      );
+
+      if (response.success && response.data) {
+        setCurrentProject(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load project info:', error);
+    }
+  };
 
   const loadDocuments = async () => {
     if (!token || !projectId) return;
 
     setLoading(true);
     try {
-      const response = await window.electronAPI.document.list({
-        token,
-        projectId: parseInt(projectId),
-        page: 1,
-        pageSize: 100,
-      });
+      // å¾ž token ä¸­è§£æž userId
+      const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+      const userId = tokenPayload.userId;
+
+      const response = await window.electronAPI.document.list(
+        parseInt(projectId),
+        userId,
+        1,
+        100
+      );
 
       if (response.success && response.data) {
-        setDocuments(response.data.documents || []);
+        setDocuments(response.data.items || []); // æ”¹ç‚º items
       } else {
-        message.error(response.message || '? è??‡æ??—è¡¨å¤±æ?');
+        message.error(response.message || 'Failed to load documents');
       }
     } catch (error) {
-      console.error('? è??‡æ?å¤±æ?:', error);
-      message.error('? è??‡æ??—è¡¨å¤±æ?');
+      console.error('Failed to load documents:', error);
+      message.error('Failed to load documents');
     } finally {
       setLoading(false);
     }
@@ -84,27 +109,50 @@ const DocumentListPage: React.FC = () => {
 
     const filePath = (file as any).path;
     if (!filePath) {
-      message.error('?¡æ??²å??‡ä»¶è·¯å?');
+      message.error('Cannot get file path');
       return false;
     }
 
     setUploading(true);
     try {
-      const response = await window.electronAPI.document.import({
-        token,
-        projectId: parseInt(projectId),
+      // å¾ž token ä¸­è§£æž userId
+      const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+      const userId = tokenPayload.userId;
+
+      // ç²å–æ–‡ä»¶é¡žåž‹
+      const fileName = file.name;
+      const fileExtension = fileName.split('.').pop()?.toLowerCase();
+      let fileType: 'pdf' | 'docx' | 'txt' = 'txt';
+      
+      if (fileExtension === 'pdf') {
+        fileType = 'pdf';
+      } else if (fileExtension === 'docx') {
+        fileType = 'docx';
+      } else if (fileExtension === 'txt') {
+        fileType = 'txt';
+      } else {
+        message.error('Unsupported file type. Please upload .docx, .pdf, or .txt files.');
+        setUploading(false);
+        return false;
+      }
+
+      const response = await window.electronAPI.document.create(
+        parseInt(projectId),
+        userId,
+        fileName,
         filePath,
-      });
+        fileType
+      );
 
       if (response.success) {
-        message.success('?‡æ?å°Žå…¥?å?');
+        message.success('Document imported successfully');
         loadDocuments();
       } else {
-        message.error(response.message || '?‡æ?å°Žå…¥å¤±æ?');
+        message.error(response.message || 'Failed to import document');
       }
     } catch (error) {
-      console.error('ä¸Šå‚³?‡æ?å¤±æ?:', error);
-      message.error('?‡æ?å°Žå…¥å¤±æ?');
+      console.error('Failed to upload document:', error);
+      message.error('Failed to import document');
     } finally {
       setUploading(false);
     }
@@ -117,20 +165,24 @@ const DocumentListPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await window.electronAPI.document.delete({
-        token,
+      // å¾ž token ä¸­è§£æž userId
+      const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+      const userId = tokenPayload.userId;
+
+      const response = await window.electronAPI.document.delete(
         documentId,
-      });
+        userId
+      );
 
       if (response.success) {
-        message.success('?‡æ??ªé™¤?å?');
+        message.success('Document deleted successfully');
         loadDocuments();
       } else {
-        message.error(response.message || '?ªé™¤?‡æ?å¤±æ?');
+        message.error(response.message || 'Failed to delete document');
       }
     } catch (error) {
-      console.error('?ªé™¤?‡æ?å¤±æ?:', error);
-      message.error('?ªé™¤?‡æ?å¤±æ?');
+      console.error('Failed to delete document:', error);
+      message.error('Failed to delete document');
     } finally {
       setLoading(false);
     }
@@ -143,10 +195,10 @@ const DocumentListPage: React.FC = () => {
 
   const getStatusTag = (status: string) => {
     const statusMap: Record<string, { color: string; text: string }> = {
-      pending: { color: 'default', text: 'å¾…è??? },
-      processing: { color: 'processing', text: '?•ç?ä¸? },
-      completed: { color: 'success', text: 'å·²å??? },
-      failed: { color: 'error', text: 'å¤±æ?' },
+      pending: { color: 'default', text: 'Pending' },
+      processing: { color: 'processing', text: 'Processing' },
+      completed: { color: 'success', text: 'Completed' },
+      failed: { color: 'error', text: 'Failed' },
     };
 
     const config = statusMap[status] || statusMap.pending;
@@ -155,17 +207,17 @@ const DocumentListPage: React.FC = () => {
 
   const getRiskTag = (count: number) => {
     if (count === 0) {
-      return <Tag color="success">?¡é¢¨??/Tag>;
+      return <Tag color="success">No Risk</Tag>;
     } else if (count < 5) {
       return (
         <Tag icon={<WarningOutlined />} color="warning">
-          {count} ?‹é¢¨??
+          {count} Risks
         </Tag>
       );
     } else {
       return (
         <Tag icon={<WarningOutlined />} color="error">
-          {count} ?‹é¢¨??
+          {count} Risks
         </Tag>
       );
     }
@@ -173,7 +225,7 @@ const DocumentListPage: React.FC = () => {
 
   const columns = [
     {
-      title: '?‡æ??ç¨±',
+      title: 'Document Name',
       dataIndex: 'filename',
       key: 'filename',
       render: (text: string, record: Document) => (
@@ -184,7 +236,7 @@ const DocumentListPage: React.FC = () => {
       ),
     },
     {
-      title: '?‡ä»¶é¡žå?',
+      title: 'File Type',
       dataIndex: 'file_type',
       key: 'file_type',
       width: 120,
@@ -193,28 +245,28 @@ const DocumentListPage: React.FC = () => {
       ),
     },
     {
-      title: '?€??,
+      title: 'Status',
       dataIndex: 'status',
       key: 'status',
       width: 120,
       render: (status: string) => getStatusTag(status),
     },
     {
-      title: 'é¢¨éšª?¸é?',
+      title: 'Risk Count',
       dataIndex: 'risk_count',
       key: 'risk_count',
       width: 150,
       render: (count: number) => getRiskTag(count),
     },
     {
-      title: 'å°Žå…¥?‚é?',
+      title: 'Imported At',
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
-      render: (date: string) => new Date(date).toLocaleString('zh-CN'),
+      render: (date: string) => new Date(date).toLocaleString(),
     },
     {
-      title: '?ä?',
+      title: 'Actions',
       key: 'action',
       width: 180,
       render: (_: unknown, record: Document) => (
@@ -224,17 +276,17 @@ const DocumentListPage: React.FC = () => {
             icon={<EyeOutlined />}
             onClick={() => handleViewDocument(record)}
           >
-            ?¥ç?
+            View
           </Button>
           <Popconfirm
-            title="ç¢ºå?è¦åˆª?¤é€™å€‹æ?æª”å?ï¼?
-            description="?ªé™¤å¾Œå??¡æ??¢å¾©??
+            title="Delete this document?"
+            description="This action cannot be undone."
             onConfirm={() => handleDeleteDocument(record.id)}
-            okText="ç¢ºå?"
-            cancelText="?–æ?"
+            okText="Yes"
+            cancelText="No"
           >
             <Button type="link" danger icon={<DeleteOutlined />}>
-              ?ªé™¤
+              Delete
             </Button>
           </Popconfirm>
         </Space>
@@ -247,7 +299,18 @@ const DocumentListPage: React.FC = () => {
       <AppHeader />
       <Content className="document-list-content">
         <Card
-          title={`?…ç›®ï¼?{currentProject?.name || '?ªçŸ¥?…ç›®'}`}
+          title={
+            <div>
+              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                {currentProject?.name || 'Unknown Project'}
+              </div>
+              {currentProject?.description && (
+                <div style={{ fontSize: '14px', fontWeight: 'normal', color: '#666', marginTop: '8px' }}>
+                  {currentProject.description}
+                </div>
+              )}
+            </div>
+          }
           extra={
             <Upload
               beforeUpload={handleUpload}
@@ -259,7 +322,7 @@ const DocumentListPage: React.FC = () => {
                 icon={<UploadOutlined />}
                 loading={uploading}
               >
-                å°Žå…¥?‡æ?
+                Import Document
               </Button>
             </Upload>
           }
@@ -272,7 +335,7 @@ const DocumentListPage: React.FC = () => {
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
-              showTotal: (total) => `??${total} ?‹æ?æª”`,
+              showTotal: (total) => `Total ${total} documents`,
             }}
           />
         </Card>

@@ -65,6 +65,17 @@ export const RISK_CHANNELS = {
   DELETE_RULE: 'risk:delete-rule'
 } as const;
 
+// 批註相關通道
+export const ANNOTATION_CHANNELS = {
+  CREATE: 'annotation:create',
+  GET_BY_CLAUSE: 'annotation:get-by-clause',
+  UPDATE: 'annotation:update',
+  DELETE: 'annotation:delete',
+  RESOLVE: 'annotation:resolve',
+  GET_MENTIONS: 'annotation:get-mentions',
+  MARK_MENTION_READ: 'annotation:mark-mention-read'
+} as const;
+
 // 文件操作相關通道
 export const FILE_CHANNELS = {
   SELECT_FILE: 'file:select-file',
@@ -91,5 +102,6 @@ export type IPCChannel =
   | typeof DOCUMENT_CHANNELS[keyof typeof DOCUMENT_CHANNELS]
   | typeof CLAUSE_CHANNELS[keyof typeof CLAUSE_CHANNELS]
   | typeof RISK_CHANNELS[keyof typeof RISK_CHANNELS]
+  | typeof ANNOTATION_CHANNELS[keyof typeof ANNOTATION_CHANNELS]
   | typeof FILE_CHANNELS[keyof typeof FILE_CHANNELS]
   | typeof SYSTEM_CHANNELS[keyof typeof SYSTEM_CHANNELS];

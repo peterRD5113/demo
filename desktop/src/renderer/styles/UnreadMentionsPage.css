@@ -1,0 +1,141 @@
+/* 待確認清單頁面樣式 */
+.unread-mentions-layout {
+  min-height: 100vh;
+  background-color: #f0f2f5;
+}
+
+.unread-mentions-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* 頁面頭部 */
+.mentions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.mentions-header h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* 提及列表 */
+.mentions-list {
+  margin-top: 16px;
+}
+
+.mention-item {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: all 0.3s;
+}
+
+.mention-item:hover {
+  border-color: #d9d9d9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.mention-item.unread {
+  border-left: 4px solid #1890ff;
+  background-color: #f6ffed;
+}
+
+/* 提及詳情 */
+.mention-details {
+  margin-top: 8px;
+}
+
+.mention-time {
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-bottom: 4px;
+}
+
+.mention-location {
+  font-size: 13px;
+  color: #595959;
+}
+
+/* 提及內容區域 */
+.mention-content-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.mention-annotation {
+  margin-bottom: 16px;
+}
+
+.mention-text {
+  margin-top: 8px;
+  padding: 12px;
+  background-color: #fafafa;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* @mention 高亮 */
+.mention-highlight {
+  color: #1890ff;
+  font-weight: 600;
+  background-color: #e6f7ff;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+/* 條款預覽 */
+.mention-clause-preview {
+  margin-top: 12px;
+}
+
+.clause-preview-text {
+  margin-top: 8px;
+  padding: 12px;
+  background-color: #f5f5f5;
+  border-left: 3px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #595959;
+}
+
+/* 操作按鈕 */
+.mention-item .ant-list-item-action {
+  margin-top: 16px;
+}
+
+.mention-item .ant-list-item-action > li {
+  padding: 0 8px;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+  .mentions-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .mention-item {
+    padding: 12px;
+  }
+
+  .mention-text,
+  .clause-preview-text {
+    padding: 8px;
+    font-size: 13px;
+  }
+}

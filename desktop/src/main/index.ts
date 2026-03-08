@@ -15,6 +15,8 @@ let mainWindow: BrowserWindow | null = null;
  * Create main window
  */
 function createWindow(): void {
+  console.log('Creating main window...');
+  
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -25,16 +27,36 @@ function createWindow(): void {
     },
   });
 
+  console.log('Window created, loading HTML...');
+  const htmlPath = path.join(__dirname, '../renderer/index.html');
+  console.log('HTML path:', htmlPath);
+
   // Load the index.html
   // Always load from dist in production build
-  mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+  mainWindow.loadFile(htmlPath)
+    .then(() => {
+      console.log('✅ HTML loaded successfully');
+    })
+    .catch((error) => {
+      console.error('❌ Failed to load HTML:', error);
+    });
 
   // Open DevTools in development
   if (process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools();
   }
 
+  // Add error handlers
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('❌ Page failed to load:', errorCode, errorDescription);
+  });
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('✅ Page finished loading');
+  });
+
   mainWindow.on('closed', () => {
+    console.log('Window closed');
     mainWindow = null;
   });
 }

@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 import { BaseRepository } from './BaseRepository';
 import type { User, UserResponse } from '@shared/types';
 import bcrypt from 'bcryptjs';
@@ -180,7 +180,24 @@ export class UserRepository extends BaseRepository<User> {
       list: result.list.map((user) => this.getUserResponse(user)),
     };
   }
+  
+  /**
+   * Update last login time
+   */
+  updateLastLogin(userId: number): void {
+    const now = new Date().toISOString();
+    this.update(userId, { last_login: now } as Partial<User>);
+  }
+
+  /**
+   * Update password
+   */
+  updatePassword(userId: number, newPassword: string): void {
+    const passwordHash = bcrypt.hashSync(newPassword, 10);
+    this.update(userId, { password_hash: passwordHash } as Partial<User>);
+  }
 }
 
 // Export singleton instance
 export const userRepository = new UserRepository();
+

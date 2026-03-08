@@ -1,5 +1,5 @@
 /**
- * ???? IPC ???
+ * 風險識別 IPC 處理器
  */
 
 import type { IpcMain, IpcMainInvokeEvent } from 'electron';
@@ -11,7 +11,6 @@ import type {
   GetRiskRequest,
   ListRisksRequest,
   GetRisksByLevelRequest,
-  GetRisksByCategoryRequest,
   UpdateRiskStatusRequest,
   RiskStatisticsResponse,
   CreateRiskRuleRequest,
@@ -20,14 +19,14 @@ import type {
   IPCResponse,
   IPCListResponse
 } from '../types';
-import type { Risk, RiskRule } from '@shared/types';
+import type { RiskMatch, RiskRule } from '@shared/types';
 
 class RiskHandlers {
   /**
-   * ????????? IPC ???
+   * 註冊所有風險相關 IPC 處理器
    */
   register(ipcMain: IpcMain): void {
-    // ????
+    // 識別風險
     ipcMain.handle(
       RISK_CHANNELS.IDENTIFY,
       async (_event: IpcMainInvokeEvent, request: IdentifyRisksRequest): Promise<IPCResponse<IdentifyRisksResponse>> => {
@@ -47,53 +46,50 @@ class RiskHandlers {
 
           return {
             success: false,
-            message: result.message || '??????'
+            message: result.message || 'Risk identification failed'
           };
         } catch (error) {
-          console.error('??????:', error);
+          console.error('Risk identification failed:', error);
           return {
             success: false,
-            message: error instanceof Error ? error.message : '??????'
+            message: error instanceof Error ? error.message : 'Risk identification failed'
           };
         }
       }
     );
 
-    // ?????????????????? getRisk ???
+    // 獲取單個風險（暫不實現）
     ipcMain.handle(
       RISK_CHANNELS.GET,
-      async (_event: IpcMainInvokeEvent, request: GetRiskRequest): Promise<IPCResponse<Risk>> => {
+      async (_event: IpcMainInvokeEvent, request: GetRiskRequest): Promise<IPCResponse<RiskMatch>> => {
         try {
-          // TODO: ??????????
           return {
             success: false,
-            message: '??????'
+            message: 'Feature not implemented'
           };
         } catch (error) {
-          console.error('??????:', error);
+          console.error('Get risk failed:', error);
           return {
             success: false,
-            message: error instanceof Error ? error.message : '??????'
+            message: error instanceof Error ? error.message : 'Get risk failed'
           };
         }
       }
     );
 
-    // ????
+    // 獲取文檔風險列表
     ipcMain.handle(
       RISK_CHANNELS.LIST,
-      async (_event: IpcMainInvokeEvent, request: ListRisksRequest): Promise<IPCResponse<IPCListResponse<Risk>>> => {
+      async (_event: IpcMainInvokeEvent, request: ListRisksRequest): Promise<IPCResponse<IPCListResponse<RiskMatch>>> => {
         try {
-          const result = await riskService.getProjectRisks(
+          const result = await riskService.getDocumentRisks(
             request.projectId,
-            request.userId,
-            request.page,
-            request.pageSize
+            request.userId
           );
           
           return {
             success: true,
-            message: '????????',
+            message: 'Get risks list success',
             data: {
               items: result.risks,
               total: result.total,
@@ -102,31 +98,29 @@ class RiskHandlers {
             }
           };
         } catch (error) {
-          console.error('????????:', error);
+          console.error('Get risks list failed:', error);
           return {
             success: false,
-            message: error instanceof Error ? error.message : '????????'
+            message: error instanceof Error ? error.message : 'Get risks list failed'
           };
         }
       }
     );
 
-    // ?????????
+    // 按風險等級獲取
     ipcMain.handle(
       RISK_CHANNELS.GET_BY_LEVEL,
-      async (_event: IpcMainInvokeEvent, request: GetRisksByLevelRequest): Promise<IPCResponse<IPCListResponse<Risk>>> => {
+      async (_event: IpcMainInvokeEvent, request: GetRisksByLevelRequest): Promise<IPCResponse<IPCListResponse<RiskMatch>>> => {
         try {
           const result = await riskService.getRisksByLevel(
             request.projectId,
             request.userId,
-            request.level,
-            request.page,
-            request.pageSize
+            request.level
           );
           
           return {
             success: true,
-            message: '??????',
+            message: 'Get success',
             data: {
               items: result.risks,
               total: result.total,
@@ -135,110 +129,96 @@ class RiskHandlers {
             }
           };
         } catch (error) {
-          console.error('??????:', error);
+          console.error('Get failed:', error);
           return {
             success: false,
-            message: error instanceof Error ? error.message : '??????'
+            message: error instanceof Error ? error.message : 'Get failed'
           };
         }
       }
     );
 
-    // ???????
+    // 按類別獲取（暫不實現）
     ipcMain.handle(
       RISK_CHANNELS.GET_BY_CATEGORY,
-      async (_event: IpcMainInvokeEvent, request: GetRisksByCategoryRequest): Promise<IPCResponse<IPCListResponse<Risk>>> => {
+      async (_event: IpcMainInvokeEvent, request: any): Promise<IPCResponse<IPCListResponse<RiskMatch>>> => {
         try {
-          const result = await riskService.getRisksByCategory(
-            request.projectId,
-            request.userId,
-            request.category,
-            request.page,
-            request.pageSize
-          );
-          
-          return {
-            success: true,
-            message: '??????',
-            data: {
-              items: result.risks,
-              total: result.total,
-              page: request.page || 1,
-              pageSize: request.pageSize || 50
-            }
-          };
-        } catch (error) {
-          console.error('??????:', error);
           return {
             success: false,
-            message: error instanceof Error ? error.message : '??????'
+            message: 'Feature not implemented'
+          };
+        } catch (error) {
+          console.error('Get failed:', error);
+          return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Get failed'
           };
         }
       }
     );
 
-    // ??????
+    // 調整風險等級
     ipcMain.handle(
       RISK_CHANNELS.UPDATE_STATUS,
       async (_event: IpcMainInvokeEvent, request: UpdateRiskStatusRequest): Promise<IPCResponse<void>> => {
         try {
-          const result = await riskService.updateRiskStatus(
+          const result = await riskService.adjustRiskLevel(
             request.riskId,
             request.userId,
-            request.status
+            request.status as 'high' | 'medium' | 'low'
           );
           
           if (result.success) {
             return {
               success: true,
-              message: '????????'
+              message: 'Adjust risk level success'
             };
           }
 
           return {
             success: false,
-            message: result.message || '????????'
+            message: result.message || 'Adjust risk level failed'
           };
         } catch (error) {
-          console.error('????????:', error);
+          console.error('Adjust risk level failed:', error);
           return {
             success: false,
-            message: error instanceof Error ? error.message : '????????'
+            message: error instanceof Error ? error.message : 'Adjust risk level failed'
           };
         }
       }
     );
 
-    // ??????
+    // 獲取統計
     ipcMain.handle(
       RISK_CHANNELS.GET_STATS,
-      async (_event: IpcMainInvokeEvent, projectId: number, userId: number): Promise<IPCResponse<RiskStatisticsResponse>> => {
+      async (_event: IpcMainInvokeEvent, documentId: number, userId: number): Promise<IPCResponse<RiskStatisticsResponse>> => {
         try {
-          const stats = await riskService.getProjectRiskStatistics(projectId, userId);
+          const stats = await riskService.getDocumentRiskStatistics(documentId, userId);
           
           if (stats) {
             return {
               success: true,
-              message: '????????',
+              message: 'Get statistics success',
               data: stats
             };
           }
 
           return {
             success: false,
-            message: '????????'
+            message: 'Get statistics failed'
           };
         } catch (error) {
-          console.error('????????:', error);
+          console.error('Get statistics failed:', error);
           return {
             success: false,
-            message: error instanceof Error ? error.message : '????????'
+            message: error instanceof Error ? error.message : 'Get statistics failed'
           };
         }
       }
     );
 
-    // ????????
+    // 獲取所有規則
     ipcMain.handle(
       RISK_CHANNELS.GET_RULES,
       async (_event: IpcMainInvokeEvent): Promise<IPCResponse<RiskRule[]>> => {
@@ -247,20 +227,20 @@ class RiskHandlers {
           
           return {
             success: true,
-            message: '????????',
+            message: 'Get rules success',
             data: rules
           };
         } catch (error) {
-          console.error('????????:', error);
+          console.error('Get rules failed:', error);
           return {
             success: false,
-            message: error instanceof Error ? error.message : '????????'
+            message: error instanceof Error ? error.message : 'Get rules failed'
           };
         }
       }
     );
 
-    // ????????
+    // 獲取啟用規則
     ipcMain.handle(
       RISK_CHANNELS.GET_ACTIVE_RULES,
       async (_event: IpcMainInvokeEvent): Promise<IPCResponse<RiskRule[]>> => {
@@ -269,55 +249,55 @@ class RiskHandlers {
           
           return {
             success: true,
-            message: '??????????',
+            message: 'Get active rules success',
             data: rules
           };
         } catch (error) {
-          console.error('??????????:', error);
+          console.error('Get active rules failed:', error);
           return {
             success: false,
-            message: error instanceof Error ? error.message : '??????????'
+            message: error instanceof Error ? error.message : 'Get active rules failed'
           };
         }
       }
     );
 
-    // ??????
+    // 創建規則
     ipcMain.handle(
       RISK_CHANNELS.CREATE_RULE,
       async (_event: IpcMainInvokeEvent, request: CreateRiskRuleRequest): Promise<IPCResponse<{ ruleId: number }>> => {
         try {
           const result = await riskService.createRule(
             request.name,
+            request.description,
+            request.category ? [request.category] : [],
             request.pattern,
-            request.riskLevel,
-            request.category,
-            request.description
+            request.riskLevel
           );
           
           if (result.success && result.ruleId) {
             return {
               success: true,
-              message: '????????',
+              message: 'Create rule success',
               data: { ruleId: result.ruleId }
             };
           }
 
           return {
             success: false,
-            message: result.message || '????????'
+            message: result.message || 'Create rule failed'
           };
         } catch (error) {
-          console.error('????????:', error);
+          console.error('Create rule failed:', error);
           return {
             success: false,
-            message: error instanceof Error ? error.message : '????????'
+            message: error instanceof Error ? error.message : 'Create rule failed'
           };
         }
       }
     );
 
-    // ??????
+    // 更新規則
     ipcMain.handle(
       RISK_CHANNELS.UPDATE_RULE,
       async (_event: IpcMainInvokeEvent, request: UpdateRiskRuleRequest): Promise<IPCResponse<void>> => {
@@ -325,34 +305,32 @@ class RiskHandlers {
           const result = await riskService.updateRule(request.ruleId, {
             name: request.name,
             pattern: request.pattern,
-            risk_level: request.risk_level,
-            category: request.category,
-            description: request.description,
-            is_active: request.is_active
+            riskLevel: request.risk_level,
+            description: request.description
           });
           
           if (result.success) {
             return {
               success: true,
-              message: '????????'
+              message: 'Update rule success'
             };
           }
 
           return {
             success: false,
-            message: result.message || '????????'
+            message: result.message || 'Update rule failed'
           };
         } catch (error) {
-          console.error('????????:', error);
+          console.error('Update rule failed:', error);
           return {
             success: false,
-            message: error instanceof Error ? error.message : '????????'
+            message: error instanceof Error ? error.message : 'Update rule failed'
           };
         }
       }
     );
 
-    // ??????
+    // 刪除規則
     ipcMain.handle(
       RISK_CHANNELS.DELETE_RULE,
       async (_event: IpcMainInvokeEvent, request: DeleteRiskRuleRequest): Promise<IPCResponse<void>> => {
@@ -362,19 +340,19 @@ class RiskHandlers {
           if (result.success) {
             return {
               success: true,
-              message: '????????'
+              message: 'Delete rule success'
             };
           }
 
           return {
             success: false,
-            message: result.message || '????????'
+            message: result.message || 'Delete rule failed'
           };
         } catch (error) {
-          console.error('????????:', error);
+          console.error('Delete rule failed:', error);
           return {
             success: false,
-            message: error instanceof Error ? error.message : '????????'
+            message: error instanceof Error ? error.message : 'Delete rule failed'
           };
         }
       }

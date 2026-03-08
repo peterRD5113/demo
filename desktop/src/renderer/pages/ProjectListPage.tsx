@@ -22,7 +22,10 @@ const ProjectListPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isPasswordModalVisible, setIsPasswordModalVisible] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [form] = Form.useForm();
+  const [passwordForm] = Form.useForm();
 
   useEffect(() => {
     loadProjects();
@@ -33,33 +36,43 @@ const ProjectListPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await window.electronAPI.project.getProjects({
-        token,
-        page: 1,
-        pageSize: 50,
-      });
+      // 從 token 中解析 userId
+      const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+      const userId = tokenPayload.userId;
+
+      const response = await window.electronAPI.project.list(
+        userId,
+        1,
+        50
+      );
 
       if (response.success && response.data) {
-        setProjects(response.data.projects || []);
+        setProjects(response.data.items || []);
       } else {
         message.error(response.message || 'Failed to load projects');
       }
     } catch (error) {
+      console.error('Failed to load projects:', error);
       message.error('Failed to load projects');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateProject = async (values: { name: string; description: string }) => {
+  const handleCreateProject = async (values: { name: string; description: string; password?: string }) => {
     if (!token) return;
 
     try {
-      const response = await window.electronAPI.project.createProject({
-        token,
-        name: values.name,
-        description: values.description,
-      });
+      // 從 token 中解析 userId
+      const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+      const userId = tokenPayload.userId;
+
+      const response = await window.electronAPI.project.create(
+        values.name,
+        userId,
+        values.description,
+        values.password // 添加密碼參數
+      );
 
       if (response.success) {
         message.success('Project created successfully');
@@ -70,12 +83,67 @@ const ProjectListPage: React.FC = () => {
         message.error(response.message || 'Failed to create project');
       }
     } catch (error) {
+      console.error('Failed to create project:', error);
       message.error('Failed to create project');
     }
   };
 
-  const handleOpenProject = (projectId: number) => {
-    navigate(`/project/${projectId}/documents`);
+  const handleOpenProject = async (projectId: number) => {
+    if (!token) return;
+
+    try {
+      // 從 token 中解析 userId
+      const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+      const userId = tokenPayload.userId;
+
+      // 檢查項目是否有密碼保護
+      const project = await window.electronAPI.project.get(projectId, userId);
+      
+      if (!project.success) {
+        message.error('Failed to get project info');
+        return;
+      }
+
+      // 如果項目有密碼，顯示密碼輸入框
+      if (project.data.password_hash) {
+        setSelectedProjectId(projectId);
+        setIsPasswordModalVisible(true);
+      } else {
+        // 沒有密碼，直接進入
+        navigate(`/project/${projectId}/documents`);
+      }
+    } catch (error) {
+      console.error('Failed to open project:', error);
+      message.error('Failed to open project');
+    }
+  };
+
+  const handleVerifyPassword = async (values: { password: string }) => {
+    if (!token || !selectedProjectId) return;
+
+    try {
+      // 從 token 中解析 userId
+      const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+      const userId = tokenPayload.userId;
+
+      const response = await window.electronAPI.project.verifyPassword(
+        selectedProjectId,
+        userId,
+        values.password
+      );
+
+      if (response.success) {
+        message.success('Password verified');
+        setIsPasswordModalVisible(false);
+        passwordForm.resetFields();
+        navigate(`/project/${selectedProjectId}/documents`);
+      } else {
+        message.error(response.message || 'Incorrect password');
+      }
+    } catch (error) {
+      console.error('Failed to verify password:', error);
+      message.error('Failed to verify password');
+    }
   };
 
   const columns = [
@@ -178,9 +246,55 @@ const ProjectListPage: React.FC = () => {
               />
             </Form.Item>
 
+            <Form.Item
+              label="Project Password (Optional)"
+              name="password"
+              extra="Set a password to protect this project. Leave empty for no password."
+            >
+              <Input.Password
+                placeholder="Enter project password (optional)"
+              />
+            </Form.Item>
+
             <Form.Item>
               <Button type="primary" htmlType="submit" block>
                 Create
+              </Button>
+            </Form.Item>
+          </Form>
+        </Modal>
+
+        <Modal
+          title="Enter Project Password"
+          open={isPasswordModalVisible}
+          onCancel={() => {
+            setIsPasswordModalVisible(false);
+            setSelectedProjectId(null);
+            passwordForm.resetFields();
+          }}
+          footer={null}
+        >
+          <Form
+            form={passwordForm}
+            layout="vertical"
+            onFinish={handleVerifyPassword}
+          >
+            <Form.Item
+              label="Password"
+              name="password"
+              rules={[
+                { required: true, message: 'Please enter project password' },
+              ]}
+            >
+              <Input.Password
+                placeholder="Enter project password"
+                autoFocus
+              />
+            </Form.Item>
+
+            <Form.Item>
+              <Button type="primary" htmlType="submit" block>
+                Verify
               </Button>
             </Form.Item>
           </Form>

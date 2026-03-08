@@ -1,4 +1,4 @@
-import { BaseRepository } from './BaseRepository';
+﻿import { BaseRepository } from './BaseRepository';
 import type { Document } from '@shared/types';
 
 /**
@@ -24,11 +24,11 @@ export class DocumentRepository extends BaseRepository<Document> {
     return this.insert({
       project_id: projectId,
       name,
-      original_name: originalName,
+      original_filename: originalName,
       file_type: fileType,
       file_size: fileSize,
       file_path: filePath,
-      status: 'parsing',
+      status: 'pending',
     } as Partial<Document>);
   }
 
@@ -58,7 +58,7 @@ export class DocumentRepository extends BaseRepository<Document> {
   /**
    * 更新文檔狀態
    */
-  updateStatus(documentId: number, status: 'parsing' | 'ready' | 'error'): void {
+  updateStatus(documentId: number, status: 'pending' | 'processing' | 'completed' | 'failed', errorMessage?: string): void {
     this.update(documentId, { status } as Partial<Document>);
   }
 
@@ -72,7 +72,7 @@ export class DocumentRepository extends BaseRepository<Document> {
   /**
    * 根據狀態查詢文檔
    */
-  findByStatus(status: 'parsing' | 'ready' | 'error'): Document[] {
+  findByStatus(status: 'pending' | 'processing' | 'completed' | 'failed'): Document[] {
     return this.findByCondition('status = ?', [status]);
   }
 
@@ -140,3 +140,6 @@ export class DocumentRepository extends BaseRepository<Document> {
 
 // 導出單例實例
 export const documentRepository = new DocumentRepository();
+
+
+

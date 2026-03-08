@@ -7,7 +7,11 @@ import { ipcMain } from 'electron';
 import { authHandlers } from './handlers/authHandlers';
 import { projectHandlers } from './handlers/projectHandlers';
 import { documentHandlers } from './handlers/documentHandlers';
+import { clauseHandlers } from './handlers/clauseHandlers';
 import { riskHandlers } from './handlers/riskHandlers';
+import { annotationHandlers } from './handlers/annotationHandlers';
+import { registerVersionHandlers } from './handlers/versionHandlers';
+import { registerExportHandlers } from './handlers/exportHandlers';
 import { fileHandlers } from './handlers/fileHandlers';
 import { systemHandlers } from './handlers/systemHandlers';
 
@@ -26,8 +30,20 @@ export function registerIPCHandlers(): void {
   // Register document handlers
   documentHandlers.register(ipcMain);
 
+  // Register clause handlers
+  clauseHandlers.register(ipcMain);
+
   // Register risk handlers
   riskHandlers.register(ipcMain);
+
+  // Register annotation handlers
+  annotationHandlers.register(ipcMain);
+
+  // Register version handlers
+  registerVersionHandlers();
+
+  // Register export handlers
+  registerExportHandlers();
 
   // Register file operation handlers
   fileHandlers.register(ipcMain);

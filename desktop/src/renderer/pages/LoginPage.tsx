@@ -89,7 +89,7 @@ const LoginPage: React.FC = () => {
         </Form>
 
         <div className="login-footer">
-          <p>Test Account: admin / admin123</p>
+          <p>Test Account: admin / Admin@123</p>
           <p className="version">v1.0.0</p>
         </div>
       </Card>

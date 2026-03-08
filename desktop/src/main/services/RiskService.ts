@@ -4,8 +4,8 @@
  * Handles risk rule matching, risk assessment, and management
  */
 
-import { riskRepository, clauseRepository, projectRepository } from '@main/repositories';
-import type { Risk, RiskRule } from '@shared/types';
+import { riskRuleRepository, riskMatchRepository, clauseRepository, projectRepository, documentRepository } from '@main/repositories';
+import type { RiskMatch, RiskRule } from '@shared/types';
 import {
   validateRequiredString,
   validateOptionalString,
@@ -20,12 +20,12 @@ interface RiskIdentificationResult {
   success: boolean;
   message: string;
   risksFound?: number;
-  risks?: Risk[];
+  risks?: RiskMatch[];
 }
 
 // Risk list response
 interface RiskListResponse {
-  risks: Risk[];
+  risks: RiskMatch[];
   total: number;
 }
 
@@ -40,7 +40,6 @@ interface RiskStatistics {
 
 // Risk level constants
 const RISK_LEVELS = ['high', 'medium', 'low'] as const;
-const RISK_STATUS = ['pending', 'reviewing', 'resolved', 'ignored'] as const;
 
 class RiskService {
   /**
@@ -56,6 +55,25 @@ class RiskService {
       validatePositiveInteger(documentId, 'Document ID');
       validatePositiveInteger(userId, 'User ID');
 
+      // Get document to check project permission
+      const document = documentRepository.findById(documentId);
+      
+      if (!document) {
+        return {
+          success: false,
+          message: 'Document not found'
+        };
+      }
+
+      // Check project permission
+      const projectId = document.project_id;
+      if (!projectRepository.isOwnedByUser(projectId, userId)) {
+        return {
+          success: false,
+          message: 'No permission to access this document'
+        };
+      }
+
       // Get all clauses in document
       const clauses = clauseRepository.findByDocumentId(documentId);
       
@@ -66,17 +84,8 @@ class RiskService {
         };
       }
 
-      // Check project permission
-      const firstClause = clauses[0];
-      if (!projectRepository.isOwnedByUser(firstClause.project_id, userId)) {
-        return {
-          success: false,
-          message: 'No permission to access this document'
-        };
-      }
-
       // Get all active risk rules
-      const rules = riskRepository.findActiveRules();
+      const rules = riskRuleRepository.findEnabledRules();
       
       if (rules.length === 0) {
         return {
@@ -87,33 +96,40 @@ class RiskService {
 
       // Perform risk identification on each clause
       let risksFound = 0;
-      const identifiedRisks: Risk[] = [];
+      const identifiedRisks: RiskMatch[] = [];
 
       for (const clause of clauses) {
         for (const rule of rules) {
+          // Check if rule has pattern
+          if (!rule.pattern) {
+            continue;
+          }
+
           // Use regex for matching
-          const regex = new RegExp(rule.pattern, 'i');
-          
-          if (regex.test(clause.content)) {
-            // Create risk record
-            const riskId = riskRepository.createRisk(
-              clause.project_id,
-              documentId,
-              clause.id,
-              rule.id,
-              rule.risk_level,
-              rule.category,
-              rule.description,
-              clause.content.substring(0, 200) // Take first 200 chars as context
-            );
+          try {
+            const regex = new RegExp(rule.pattern, 'i');
+            
+            if (regex.test(clause.content)) {
+              // Create risk match record
+              const matchId = riskMatchRepository.createMatch(
+                clause.id,
+                rule.id,
+                rule.risk_level,
+                clause.content.substring(0, 200), // Take first 200 chars as matched text
+                rule.suggestion
+              );
 
-            risksFound++;
+              risksFound++;
 
-            // Get created risk
-            const risk = riskRepository.findById(riskId);
-            if (risk) {
-              identifiedRisks.push(risk);
+              // Get created match
+              const match = riskMatchRepository.findById(matchId);
+              if (match) {
+                identifiedRisks.push(match);
+              }
             }
+          } catch (error) {
+            console.error(`Invalid regex pattern for rule ${rule.id}:`, error);
+            continue;
           }
         }
       }
@@ -142,62 +158,21 @@ class RiskService {
   }
 
   /**
-   * Get project risks
-   */
-  async getProjectRisks(
-    projectId: number,
-    userId: number,
-    page: number = 1,
-    pageSize: number = 50
-  ): Promise<RiskListResponse> {
-    try {
-      // Parameter validation
-      validatePositiveInteger(projectId, 'Project ID');
-      validatePositiveInteger(userId, 'User ID');
-      validatePagination(page, pageSize);
-
-      // Check project permission
-      if (!projectRepository.isOwnedByUser(projectId, userId)) {
-        return {
-          risks: [],
-          total: 0
-        };
-      }
-
-      const risks = riskRepository.findByProjectId(projectId, page, pageSize);
-      const total = riskRepository.countByProjectId(projectId);
-
-      return {
-        risks,
-        total
-      };
-    } catch (error) {
-      console.error('Get risks list failed:', error);
-      return {
-        risks: [],
-        total: 0
-      };
-    }
-  }
-
-  /**
    * Get document risks
    */
   async getDocumentRisks(
     documentId: number,
-    userId: number,
-    page: number = 1,
-    pageSize: number = 50
+    userId: number
   ): Promise<RiskListResponse> {
     try {
       // Parameter validation
       validatePositiveInteger(documentId, 'Document ID');
       validatePositiveInteger(userId, 'User ID');
-      validatePagination(page, pageSize);
 
-      const risks = riskRepository.findByDocumentId(documentId, page, pageSize);
+      // Get document to check permission
+      const document = documentRepository.findById(documentId);
       
-      if (risks.length === 0) {
+      if (!document) {
         return {
           risks: [],
           total: 0
@@ -205,18 +180,18 @@ class RiskService {
       }
 
       // Check project permission
-      if (!projectRepository.isOwnedByUser(risks[0].project_id, userId)) {
+      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
         return {
           risks: [],
           total: 0
         };
       }
 
-      const total = riskRepository.countByDocumentId(documentId);
+      const risks = riskMatchRepository.findByDocumentId(documentId);
 
       return {
         risks,
-        total
+        total: risks.length
       };
     } catch (error) {
       console.error('Get risks list failed:', error);
@@ -228,36 +203,42 @@ class RiskService {
   }
 
   /**
-   * Get risks by level
+   * Get risks by level for a document
    */
   async getRisksByLevel(
-    projectId: number,
+    documentId: number,
     userId: number,
-    level: 'high' | 'medium' | 'low',
-    page: number = 1,
-    pageSize: number = 50
+    level: 'high' | 'medium' | 'low'
   ): Promise<RiskListResponse> {
     try {
       // Parameter validation
-      validatePositiveInteger(projectId, 'Project ID');
+      validatePositiveInteger(documentId, 'Document ID');
       validatePositiveInteger(userId, 'User ID');
       validateEnum(level, 'Risk level', RISK_LEVELS);
-      validatePagination(page, pageSize);
 
-      // Check project permission
-      if (!projectRepository.isOwnedByUser(projectId, userId)) {
+      // Get document to check permission
+      const document = documentRepository.findById(documentId);
+      
+      if (!document) {
         return {
           risks: [],
           total: 0
         };
       }
 
-      const risks = riskRepository.findByRiskLevel(projectId, level, page, pageSize);
-      const total = riskRepository.countByProjectId(projectId);
+      // Check project permission
+      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+        return {
+          risks: [],
+          total: 0
+        };
+      }
+
+      const risks = riskMatchRepository.findByRiskLevel(documentId, level);
 
       return {
         risks,
-        total
+        total: risks.length
       };
     } catch (error) {
       console.error('Get risks list failed:', error);
@@ -269,85 +250,62 @@ class RiskService {
   }
 
   /**
-   * Get risks by category
+   * Adjust risk level
    */
-  async getRisksByCategory(
-    projectId: number,
+  async adjustRiskLevel(
+    matchId: number,
     userId: number,
-    category: string,
-    page: number = 1,
-    pageSize: number = 50
-  ): Promise<RiskListResponse> {
-    try {
-      // Parameter validation
-      validatePositiveInteger(projectId, 'Project ID');
-      validatePositiveInteger(userId, 'User ID');
-      validateRequiredString(category, 'Risk category', 1, 50);
-      validatePagination(page, pageSize);
-
-      // Check project permission
-      if (!projectRepository.isOwnedByUser(projectId, userId)) {
-        return {
-          risks: [],
-          total: 0
-        };
-      }
-
-      const risks = riskRepository.findByCategory(projectId, category, page, pageSize);
-      const total = riskRepository.countByProjectId(projectId);
-
-      return {
-        risks,
-        total
-      };
-    } catch (error) {
-      console.error('Get risks list failed:', error);
-      return {
-        risks: [],
-        total: 0
-      };
-    }
-  }
-
-  /**
-   * Update risk status
-   */
-  async updateRiskStatus(
-    riskId: number,
-    userId: number,
-    status: 'pending' | 'reviewing' | 'resolved' | 'ignored'
+    newLevel: 'high' | 'medium' | 'low'
   ): Promise<{ success: boolean; message: string }> {
     try {
       // Parameter validation
-      validatePositiveInteger(riskId, 'Risk ID');
+      validatePositiveInteger(matchId, 'Match ID');
       validatePositiveInteger(userId, 'User ID');
-      validateEnum(status, 'Risk status', RISK_STATUS);
+      validateEnum(newLevel, 'Risk level', RISK_LEVELS);
 
-      const risk = riskRepository.findById(riskId);
+      const match = riskMatchRepository.findById(matchId);
       
-      if (!risk) {
+      if (!match) {
         return {
           success: false,
-          message: 'Risk not found'
+          message: 'Risk match not found'
+        };
+      }
+
+      // Get clause to check permission
+      const clause = clauseRepository.findById(match.clause_id);
+      if (!clause) {
+        return {
+          success: false,
+          message: 'Clause not found'
+        };
+      }
+
+      // Get document to check permission
+      const document = documentRepository.findById(clause.document_id);
+      if (!document) {
+        return {
+          success: false,
+          message: 'Document not found'
         };
       }
 
       // Check project permission
-      if (!projectRepository.isOwnedByUser(risk.project_id, userId)) {
+      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
         return {
           success: false,
           message: 'No permission to modify this risk'
         };
       }
 
-      riskRepository.updateStatus(riskId, status);
+      riskMatchRepository.adjustRiskLevel(matchId, newLevel);
 
       return {
         success: true,
-        message: 'Risk status updated successfully'
+        message: 'Risk level adjusted successfully'
       };
     } catch (error) {
-      console.error('Update risk status failed:', error);
+      console.error('Adjust risk level failed:', error);
       
       if (error instanceof Error && error.message) {
         return {
@@ -358,30 +316,51 @@ class RiskService {
       
       return {
         success: false,
-        message: 'Update risk status failed'
+        message: 'Adjust risk level failed'
       };
     }
   }
 
   /**
-   * Get project risk statistics
+   * Get document risk statistics
    */
-  async getProjectRiskStatistics(
-    projectId: number,
+  async getDocumentRiskStatistics(
+    documentId: number,
     userId: number
   ): Promise<RiskStatistics | null> {
     try {
       // Parameter validation
-      validatePositiveInteger(projectId, 'Project ID');
+      validatePositiveInteger(documentId, 'Document ID');
       validatePositiveInteger(userId, 'User ID');
 
-      // Check project permission
-      if (!projectRepository.isOwnedByUser(projectId, userId)) {
+      // Get document to check permission
+      const document = documentRepository.findById(documentId);
+      
+      if (!document) {
         return null;
       }
 
-      const stats = riskRepository.getProjectRiskStats(projectId);
-      return stats;
+      // Check project permission
+      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+        return null;
+      }
+
+      const stats = riskMatchRepository.countByRiskLevel(documentId);
+      
+      const result: RiskStatistics = {
+        total: 0,
+        high: 0,
+        medium: 0,
+        low: 0,
+        byCategory: {}
+      };
+
+      for (const stat of stats) {
+        result.total += stat.count;
+        result[stat.risk_level] = stat.count;
+      }
+
+      return result;
     } catch (error) {
       console.error('Get risk statistics failed:', error);
       return null;
@@ -393,7 +372,7 @@ class RiskService {
    */
   async getAllRules(): Promise<RiskRule[]> {
     try {
-      return riskRepository.findAllRules();
+      return riskRuleRepository.findAllParsed();
     } catch (error) {
       console.error('Get risk rules failed:', error);
       return [];
@@ -405,7 +384,7 @@ class RiskService {
    */
   async getActiveRules(): Promise<RiskRule[]> {
     try {
-      return riskRepository.findActiveRules();
+      return riskRuleRepository.findEnabledRules();
     } catch (error) {
       console.error('Get risk rules failed:', error);
       return [];
@@ -417,25 +396,24 @@ class RiskService {
    */
   async createRule(
     name: string,
+    description: string,
+    keywords: string[],
     pattern: string,
-    riskLevel: 'high' | 'medium' | 'low',
-    category: string,
-    description: string
+    riskLevel: 'high' | 'medium' | 'low'
   ): Promise<{ success: boolean; message: string; ruleId?: number }> {
     try {
       // Parameter validation
       validateRequiredString(name, 'Rule name', 1, 100);
+      validateRequiredString(description, 'Rule description', 1, 500);
       validateRegex(pattern, 'Matching pattern');
       validateEnum(riskLevel, 'Risk level', RISK_LEVELS);
-      validateRequiredString(category, 'Risk category', 1, 50);
-      validateRequiredString(description, 'Rule description', 1, 500);
 
-      const ruleId = riskRepository.createRule(
+      const ruleId = riskRuleRepository.createRule(
         name,
-        pattern,
+        description,
+        keywords,
         riskLevel,
-        category,
-        description
+        pattern
       );
 
       return {
@@ -467,11 +445,10 @@ class RiskService {
     ruleId: number,
     data: {
       name?: string;
-      pattern?: string;
-      risk_level?: 'high' | 'medium' | 'low';
-      category?: string;
       description?: string;
-      is_active?: boolean;
+      keywords?: string[];
+      pattern?: string;
+      riskLevel?: 'high' | 'medium' | 'low';
     }
   ): Promise<{ success: boolean; message: string }> {
     try {
@@ -486,19 +463,15 @@ class RiskService {
         validateRegex(data.pattern, 'Matching pattern');
       }
       
-      if (data.risk_level !== undefined) {
-        validateEnum(data.risk_level, 'Risk level', RISK_LEVELS);
-      }
-      
-      if (data.category !== undefined) {
-        validateRequiredString(data.category, 'Risk category', 1, 50);
+      if (data.riskLevel !== undefined) {
+        validateEnum(data.riskLevel, 'Risk level', RISK_LEVELS);
       }
       
       if (data.description !== undefined) {
         validateRequiredString(data.description, 'Rule description', 1, 500);
       }
 
-      riskRepository.updateRule(ruleId, data);
+      riskRuleRepository.updateRule(ruleId, data);
 
       return {
         success: true,
@@ -522,6 +495,40 @@ class RiskService {
   }
 
   /**
+   * Toggle risk rule (enable/disable)
+   */
+  async toggleRule(
+    ruleId: number,
+    enabled: boolean
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      // Parameter validation
+      validatePositiveInteger(ruleId, 'Rule ID');
+
+      riskRuleRepository.toggleRule(ruleId, enabled);
+
+      return {
+        success: true,
+        message: `Risk rule ${enabled ? 'enabled' : 'disabled'} successfully`
+      };
+    } catch (error) {
+      console.error('Toggle risk rule failed:', error);
+      
+      if (error instanceof Error && error.message) {
+        return {
+          success: false,
+          message: error.message
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Toggle risk rule failed'
+      };
+    }
+  }
+
+  /**
    * Delete risk rule (soft delete)
    */
   async deleteRule(ruleId: number): Promise<{ success: boolean; message: string }> {
@@ -529,7 +536,7 @@ class RiskService {
       // Parameter validation
       validatePositiveInteger(ruleId, 'Rule ID');
 
-      riskRepository.softDeleteRule(ruleId);
+      riskRuleRepository.softDelete(ruleId);
 
       return {
         success: true,

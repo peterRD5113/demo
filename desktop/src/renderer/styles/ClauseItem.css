@@ -11,6 +11,16 @@
   box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
 }
 
+.clause-item.editing {
+  border-color: #1890ff;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.2);
+  cursor: default;
+}
+
+.clause-item.editing:hover {
+  border-color: #1890ff;
+}
+
 .clause-item.risk-high {
   border-left: 4px solid #ff4d4f;
   background-color: #fff1f0;
@@ -28,6 +38,9 @@
 
 .clause-header {
   margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .clause-number {
@@ -36,13 +49,61 @@
   color: #1a1a1a;
 }
 
+.edit-button {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.clause-item:hover .edit-button {
+  opacity: 1;
+}
+
+/* 查看模式 */
+.clause-view-mode {
+  margin-top: 8px;
+}
+
+.clause-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #262626;
+  margin-bottom: 8px;
+}
+
 .clause-content {
   font-size: 14px;
   line-height: 1.8;
   color: #262626;
-  margin-bottom: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
+/* 編輯模式 */
+.clause-edit-mode {
+  margin-top: 12px;
+}
+
+.clause-title-input {
+  margin-bottom: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.clause-content-textarea {
+  margin-bottom: 12px;
+  font-size: 14px;
+  line-height: 1.8;
+  resize: vertical;
+}
+
+.clause-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* 風險提示 */
 .clause-risk-hint {
   padding: 8px 12px;
   background-color: rgba(255, 77, 79, 0.1);
@@ -52,6 +113,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-top: 12px;
 }
 
 .clause-risk-hint .anticon {

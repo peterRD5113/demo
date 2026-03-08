@@ -3,8 +3,8 @@ import { BaseRepository } from './BaseRepository';
 import type { RiskRule, RiskMatch, RiskLevel } from '@shared/types';
 
 /**
- * é¢¨éšªè¦å? Repository
- * ?•ç?é¢¨éšªè¦å??¸é??„æ•¸?šè¨ª??
+ * ???? Repository
+ * ?????????????
  */
 export class RiskRuleRepository extends BaseRepository<RiskRule> {
   constructor() {
@@ -12,14 +12,13 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
   }
 
   /**
-   * ?µå»ºé¢¨éšªè¦å?
+   * ??????
    */
   createRule(
     name: string,
     description: string,
     keywords: string[],
     riskLevel: RiskLevel,
-    suggestion: string,
     pattern?: string
   ): number {
     return this.insert({
@@ -28,36 +27,35 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
       keywords: JSON.stringify(keywords),
       pattern: pattern || null,
       risk_level: riskLevel,
-      suggestion,
-      enabled: 1,
+      is_enabled: 1,
     } as Partial<RiskRule>);
   }
 
   /**
-   * ?²å??€?‰å??¨ç?è¦å?
+   * ?????????
    */
   findEnabledRules(): RiskRule[] {
-    const rules = this.findByCondition('enabled = ?', [1]);
+    const rules = this.findByCondition('is_enabled = ?', [1]);
     return rules.map((rule) => this.parseRule(rule));
   }
 
   /**
-   * ?¹æ?é¢¨éšªç­‰ç??¥è©¢è¦å?
+   * ??????????
    */
   findByRiskLevel(riskLevel: RiskLevel): RiskRule[] {
-    const rules = this.findByCondition('risk_level = ? AND enabled = ?', [riskLevel, 1]);
+    const rules = this.findByCondition('risk_level = ? AND is_enabled = ?', [riskLevel, 1]);
     return rules.map((rule) => this.parseRule(rule));
   }
 
   /**
-   * ?Ÿç”¨/ç¦ç”¨è¦å?
+   * ??/????
    */
   toggleRule(ruleId: number, enabled: boolean): void {
-    this.update(ruleId, { enabled: enabled ? 1 : 0 } as Partial<RiskRule>);
+    this.update(ruleId, { is_enabled: enabled ? 1 : 0 } as Partial<RiskRule>);
   }
 
   /**
-   * ?´æ–°è¦å?
+   * ????
    */
   updateRule(
     ruleId: number,
@@ -67,7 +65,6 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
       keywords?: string[];
       pattern?: string;
       riskLevel?: RiskLevel;
-      suggestion?: string;
     }
   ): void {
     const updateData: Partial<RiskRule> = {};
@@ -77,7 +74,6 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
     if (data.keywords !== undefined) updateData.keywords = JSON.stringify(data.keywords);
     if (data.pattern !== undefined) updateData.pattern = data.pattern;
     if (data.riskLevel !== undefined) updateData.risk_level = data.riskLevel;
-    if (data.suggestion !== undefined) updateData.suggestion = data.suggestion;
 
     if (Object.keys(updateData).length > 0) {
       this.update(ruleId, updateData);
@@ -85,7 +81,7 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
   }
 
   /**
-   * è§??è¦å?ï¼ˆå? JSON å­—ç¬¦ä¸²è??ºæ•¸çµ„ï?
+   * ?????? JSON ????????
    */
   private parseRule(rule: RiskRule): RiskRule {
     return {
@@ -95,7 +91,7 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
   }
 
   /**
-   * ?¹æ? ID ?¥è©¢è¦å?ï¼ˆè§£?å?ï¼?
+   * ?? ID ?????????
    */
   findByIdParsed(id: number): RiskRule | null {
     const rule = this.findById(id);
@@ -103,7 +99,7 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
   }
 
   /**
-   * ?²å??€?‰è??‡ï?è§??å¾Œï?
+   * ???????????
    */
   findAllParsed(): RiskRule[] {
     const rules = this.findAll();
@@ -111,13 +107,13 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
   }
 
   /**
-   * çµ±è??„é¢¨?ªç?ç´šç?è¦å??¸é?
+   * ????????????
    */
   countByRiskLevel(): { risk_level: RiskLevel; count: number }[] {
     const sql = `
       SELECT risk_level, COUNT(*) as count
       FROM ${this.tableName}
-      WHERE enabled = 1
+      WHERE is_enabled = 1
       GROUP BY risk_level
     `;
     return this.executeRawQuery<{ risk_level: RiskLevel; count: number }>(sql);
@@ -125,8 +121,8 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
 }
 
 /**
- * é¢¨éšª?¹é? Repository
- * ?•ç?é¢¨éšª?¹é?è¨˜é??„æ•¸?šè¨ª??
+ * ???? Repository
+ * ?????????????
  */
 export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   constructor() {
@@ -134,7 +130,7 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * ?µå»ºé¢¨éšª?¹é?è¨˜é?
+   * ????????
    */
   createMatch(
     clauseId: number,
@@ -154,14 +150,14 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * ?¹æ?æ¢æ¬¾ ID ?¥è©¢é¢¨éšª?¹é?
+   * ???? ID ??????
    */
   findByClauseId(clauseId: number): RiskMatch[] {
     return this.findByCondition('clause_id = ?', [clauseId]);
   }
 
   /**
-   * ?¹æ??‡æ? ID ?¥è©¢?€?‰é¢¨?ªåŒ¹??
+   * ???? ID ????????
    */
   findByDocumentId(documentId: number): RiskMatch[] {
     const sql = `
@@ -181,7 +177,7 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * ?¹æ?é¢¨éšªç­‰ç??¥è©¢?¹é?
+   * ??????????
    */
   findByRiskLevel(documentId: number, riskLevel: RiskLevel): RiskMatch[] {
     const sql = `
@@ -195,21 +191,21 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * ?¨æˆ¶èª¿æ•´é¢¨éšªç­‰ç?
+   * ????????
    */
   adjustRiskLevel(matchId: number, newLevel: RiskLevel): void {
     this.update(matchId, { user_adjusted_level: newLevel } as Partial<RiskMatch>);
   }
 
   /**
-   * ?ªé™¤æ¢æ¬¾?„æ??‰é¢¨?ªåŒ¹??
+   * ???????????
    */
   deleteByClauseId(clauseId: number): number {
     return this.deleteByCondition('clause_id = ?', [clauseId]);
   }
 
   /**
-   * ?ªé™¤?‡æ??„æ??‰é¢¨?ªåŒ¹??
+   * ???????????
    */
   deleteByDocumentId(documentId: number): number {
     const sql = `
@@ -224,7 +220,7 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * çµ±è??‡æ??„é¢¨?ªæ•¸?ï??‰ç?ç´šï?
+   * ??????????????
    */
   countByRiskLevel(documentId: number): { risk_level: RiskLevel; count: number }[] {
     const sql = `
@@ -238,7 +234,7 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * ?²å??‡æ??„é?é¢¨éšªæ¢æ¬¾?¸é?
+   * ????????????
    */
   countHighRiskClauses(documentId: number): number {
     const sql = `
@@ -252,7 +248,7 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * ?²å?æ¢æ¬¾?„æ?é«˜é¢¨?ªç?ç´?
+   * ???????????
    */
   getHighestRiskLevel(clauseId: number): RiskLevel | null {
     const sql = `
@@ -272,7 +268,7 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * ?¹é??µå»ºé¢¨éšª?¹é?
+   * ????????
    */
   batchCreateMatches(
     matches: Array<{
@@ -296,6 +292,6 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 }
 
-// å°å‡º?®ä?å¯¦ä?
+// ??????
 export const riskRuleRepository = new RiskRuleRepository();
 export const riskMatchRepository = new RiskMatchRepository();

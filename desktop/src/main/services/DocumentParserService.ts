@@ -1,0 +1,269 @@
+// @ts-nocheck
+/**
+ * Document Parser Service
+ * 處理文檔解析，提取條款內容
+ */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import { clauseRepository } from '@main/repositories';
+
+// 解析後的條款結構
+interface ParsedClause {
+  clauseNumber: string;    // "1", "1.1", "1.2.1"
+  title: string | null;    // 條款標題
+  content: string;         // 條款內容
+  level: number;           // 層級 (1, 2, 3)
+  parentId: number | null; // 父條款 ID（數據庫 ID）
+  orderIndex: number;      // 排序索引
+}
+
+// 條款編號狀態（用於追蹤當前編號）
+interface NumberingState {
+  level1: number;  // 第X條
+  level2: number;  // 第X款
+  level3: number;  // 第X項
+  currentLevel1Id: number | null;  // 當前一級條款的數據庫 ID
+  currentLevel2Id: number | null;  // 當前二級條款的數據庫 ID
+}
+
+class DocumentParserService {
+  /**
+   * 解析文檔並存入數據庫
+   */
+  async parseDocument(documentId: number, filePath: string, fileType: string): Promise<{ success: boolean; message: string; clauseCount?: number }> {
+    try {
+      console.log(`開始解析文檔: ${filePath}, 類型: ${fileType}`);
+
+      // 根據文件類型選擇解析器
+      let clauses: ParsedClause[] = [];
+      
+      switch (fileType) {
+        case 'txt':
+          clauses = await this.parseTxtFile(filePath);
+          break;
+        case 'docx':
+          return {
+            success: false,
+            message: 'DOCX 解析功能尚未實現'
+          };
+        case 'pdf':
+          return {
+            success: false,
+            message: 'PDF 解析功能尚未實現'
+          };
+        default:
+          return {
+            success: false,
+            message: `不支持的文件類型: ${fileType}`
+          };
+      }
+
+      if (clauses.length === 0) {
+        return {
+          success: false,
+          message: '未能從文檔中提取到條款'
+        };
+      }
+
+      // 存入數據庫
+      const savedCount = await this.saveClauses(documentId, clauses);
+
+      console.log(`文檔解析完成，共提取 ${savedCount} 個條款`);
+
+      return {
+        success: true,
+        message: '文檔解析成功',
+        clauseCount: savedCount
+      };
+    } catch (error) {
+      console.error('文檔解析失敗:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : '文檔解析失敗'
+      };
+    }
+  }
+
+  /**
+   * 解析 TXT 文件
+   */
+  private async parseTxtFile(filePath: string): Promise<ParsedClause[]> {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+    const clauses: ParsedClause[] = [];
+    const state: NumberingState = {
+      level1: 0,
+      level2: 0,
+      level3: 0,
+      currentLevel1Id: null,
+      currentLevel2Id: null
+    };
+
+    let orderIndex = 0;
+    let currentContent: string[] = [];
+    let currentTitle: string | null = null;
+    let currentLevel = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      // 檢測條款標題
+      const clauseInfo = this.detectClauseTitle(line);
+
+      if (clauseInfo) {
+        // 保存之前累積的內容
+        if (currentContent.length > 0 && currentLevel > 0) {
+          clauses.push({
+            clauseNumber: this.generateClauseNumber(state, currentLevel),
+            title: currentTitle,
+            content: currentContent.join('\n'),
+            level: currentLevel,
+            parentId: this.getParentId(state, currentLevel),
+            orderIndex: orderIndex++
+          });
+          currentContent = [];
+        }
+
+        // 更新狀態
+        currentTitle = clauseInfo.title;
+        currentLevel = clauseInfo.level;
+        this.updateNumberingState(state, clauseInfo.level);
+      } else if (currentLevel > 0) {
+        // 累積內容
+        currentContent.push(line);
+      }
+    }
+
+    // 保存最後一個條款
+    if (currentContent.length > 0 && currentLevel > 0) {
+      clauses.push({
+        clauseNumber: this.generateClauseNumber(state, currentLevel),
+        title: currentTitle,
+        content: currentContent.join('\n'),
+        level: currentLevel,
+        parentId: this.getParentId(state, currentLevel),
+        orderIndex: orderIndex++
+      });
+    }
+
+    return clauses;
+  }
+
+  /**
+   * 檢測條款標題
+   * 識別 "第X條"、"第X款"、"第X項" 等格式
+   */
+  private detectClauseTitle(line: string): { level: number; title: string } | null {
+    // 匹配 "第X條" 或 "### 第X條"
+    const level1Match = line.match(/^#{0,3}\s*第\s*(\d+|[一二三四五六七八九十百]+)\s*條\s+(.+)$/);
+    if (level1Match) {
+      return {
+        level: 1,
+        title: line.replace(/^#{0,3}\s*/, '')
+      };
+    }
+
+    // 匹配 "### 第X款" 或 "第X款"
+    const level2Match = line.match(/^#{0,3}\s*第\s*(\d+|[一二三四五六七八九十百]+)\s*款\s+(.+)$/);
+    if (level2Match) {
+      return {
+        level: 2,
+        title: line.replace(/^#{0,3}\s*/, '')
+      };
+    }
+
+    // 匹配章節標題 "## 第X章"
+    const chapterMatch = line.match(/^#{1,2}\s*第\s*([一二三四五六七八九十百]+)\s*章\s+(.+)$/);
+    if (chapterMatch) {
+      return {
+        level: 1,
+        title: line.replace(/^#{1,2}\s*/, '')
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * 更新編號狀態
+   */
+  private updateNumberingState(state: NumberingState, level: number): void {
+    if (level === 1) {
+      state.level1++;
+      state.level2 = 0;
+      state.level3 = 0;
+    } else if (level === 2) {
+      state.level2++;
+      state.level3 = 0;
+    } else if (level === 3) {
+      state.level3++;
+    }
+  }
+
+  /**
+   * 生成條款編號
+   */
+  private generateClauseNumber(state: NumberingState, level: number): string {
+    if (level === 1) {
+      return `${state.level1}`;
+    } else if (level === 2) {
+      return `${state.level1}.${state.level2}`;
+    } else if (level === 3) {
+      return `${state.level1}.${state.level2}.${state.level3}`;
+    }
+    return '0';
+  }
+
+  /**
+   * 獲取父條款 ID（暫時返回 null，後續在保存時處理）
+   */
+  private getParentId(state: NumberingState, level: number): number | null {
+    // 這裡暫時返回 null，實際的父 ID 會在保存時設置
+    return null;
+  }
+
+  /**
+   * 保存條款到數據庫
+   */
+  private async saveClauses(documentId: number, clauses: ParsedClause[]): Promise<number> {
+    // 用於追蹤已保存條款的 ID
+    const savedIds: Map<string, number> = new Map();
+
+    for (const clause of clauses) {
+      // 確定父條款 ID
+      let parentId: number | null = null;
+      
+      if (clause.level === 2) {
+        // 二級條款的父條款是對應的一級條款
+        const parentNumber = clause.clauseNumber.split('.')[0];
+        parentId = savedIds.get(parentNumber) || null;
+      } else if (clause.level === 3) {
+        // 三級條款的父條款是對應的二級條款
+        const parts = clause.clauseNumber.split('.');
+        const parentNumber = `${parts[0]}.${parts[1]}`;
+        parentId = savedIds.get(parentNumber) || null;
+      }
+
+      // 保存條款
+      const clauseId = clauseRepository.createClause(
+        documentId,
+        clause.clauseNumber,
+        clause.content,
+        clause.level,
+        clause.orderIndex,
+        clause.title,
+        parentId
+      );
+
+      // 記錄已保存的條款 ID
+      savedIds.set(clause.clauseNumber, clauseId);
+    }
+
+    return clauses.length;
+  }
+}
+
+// 導出單例
+export const documentParserService = new DocumentParserService();

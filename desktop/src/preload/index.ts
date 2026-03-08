@@ -1,23 +1,99 @@
 // @ts-nocheck
 /**
- * Preload ?�本
- * ?�渲?�進�?中暴?��??��? API
+ * Preload 腳本
+ * 在渲染進程中暴露安全的 API
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
-import {
-  AUTH_CHANNELS,
-  PROJECT_CHANNELS,
-  DOCUMENT_CHANNELS,
-  CLAUSE_CHANNELS,
-  RISK_CHANNELS,
-  FILE_CHANNELS,
-  SYSTEM_CHANNELS
-} from './ipc/channels';
 
-// 定義?�露給渲?�進�???API
+// 內聯定義 IPC 通道常量（避免模塊導入問題）
+const AUTH_CHANNELS = {
+  LOGIN: 'auth:login',
+  LOGOUT: 'auth:logout',
+  REFRESH_TOKEN: 'auth:refresh-token',
+  CHANGE_PASSWORD: 'auth:change-password',
+  GET_CURRENT_USER: 'auth:get-current-user',
+  VERIFY_TOKEN: 'auth:verify-token'
+};
+
+const PROJECT_CHANNELS = {
+  CREATE: 'project:create',
+  GET: 'project:get',
+  LIST: 'project:list',
+  UPDATE: 'project:update',
+  DELETE: 'project:delete',
+  SEARCH: 'project:search',
+  GET_STATS: 'project:get-stats',
+  VERIFY_PASSWORD: 'project:verify-password'
+};
+
+const DOCUMENT_CHANNELS = {
+  CREATE: 'document:create',
+  GET: 'document:get',
+  LIST: 'document:list',
+  UPDATE: 'document:update',
+  DELETE: 'document:delete',
+  SEARCH: 'document:search',
+  GET_BY_STATUS: 'document:get-by-status',
+  UPDATE_STATUS: 'document:update-status',
+  GET_FILE_PATH: 'document:get-file-path'
+};
+
+const CLAUSE_CHANNELS = {
+  CREATE: 'clause:create',
+  GET: 'clause:get',
+  LIST: 'clause:list',
+  UPDATE: 'clause:update',
+  DELETE: 'clause:delete',
+  SEARCH: 'clause:search',
+  GET_BY_DOCUMENT: 'clause:get-by-document'
+};
+
+const RISK_CHANNELS = {
+  IDENTIFY: 'risk:identify',
+  GET: 'risk:get',
+  LIST: 'risk:list',
+  GET_BY_LEVEL: 'risk:get-by-level',
+  GET_BY_CATEGORY: 'risk:get-by-category',
+  UPDATE_STATUS: 'risk:update-status',
+  GET_STATS: 'risk:get-stats',
+  GET_RULES: 'risk:get-rules',
+  GET_ACTIVE_RULES: 'risk:get-active-rules',
+  CREATE_RULE: 'risk:create-rule',
+  UPDATE_RULE: 'risk:update-rule',
+  DELETE_RULE: 'risk:delete-rule'
+};
+
+const ANNOTATION_CHANNELS = {
+  CREATE: 'annotation:create',
+  GET_BY_CLAUSE: 'annotation:get-by-clause',
+  UPDATE: 'annotation:update',
+  DELETE: 'annotation:delete',
+  RESOLVE: 'annotation:resolve',
+  GET_MENTIONS: 'annotation:get-mentions',
+  MARK_MENTION_READ: 'annotation:mark-mention-read'
+};
+
+const FILE_CHANNELS = {
+  SELECT_FILE: 'file:select-file',
+  SELECT_FOLDER: 'file:select-folder',
+  READ_FILE: 'file:read-file',
+  WRITE_FILE: 'file:write-file',
+  DELETE_FILE: 'file:delete-file',
+  GET_FILE_INFO: 'file:get-file-info'
+};
+
+const SYSTEM_CHANNELS = {
+  GET_APP_VERSION: 'system:get-app-version',
+  GET_APP_PATH: 'system:get-app-path',
+  OPEN_EXTERNAL: 'system:open-external',
+  SHOW_MESSAGE: 'system:show-message',
+  SHOW_ERROR: 'system:show-error'
+};
+
+// 定義暴露給渲染進程的API
 const api = {
-  // ============= 認�? API =============
+  // ============= 認證 API =============
   auth: {
     login: (username: string, password: string) =>
       ipcRenderer.invoke(AUTH_CHANNELS.LOGIN, { username, password }),
@@ -38,7 +114,7 @@ const api = {
       ipcRenderer.invoke(AUTH_CHANNELS.GET_CURRENT_USER, userId)
   },
 
-  // ============= ?�目 API =============
+  // ============= 項目 API =============
   project: {
     create: (name: string, userId: number, description?: string, password?: string) =>
       ipcRenderer.invoke(PROJECT_CHANNELS.CREATE, { name, userId, description, password }),
@@ -65,7 +141,7 @@ const api = {
       ipcRenderer.invoke(PROJECT_CHANNELS.VERIFY_PASSWORD, { projectId, userId, password })
   },
 
-  // ============= ?��? API =============
+  // ============= 文檔 API =============
   document: {
     create: (projectId: number, userId: number, name: string, filePath: string, fileType: 'pdf' | 'docx' | 'txt') =>
       ipcRenderer.invoke(DOCUMENT_CHANNELS.CREATE, { projectId, userId, name, filePath, fileType }),
@@ -158,7 +234,31 @@ const api = {
       ipcRenderer.invoke(RISK_CHANNELS.DELETE_RULE, { ruleId })
   },
 
-  // ============= ?�件?��? API =============
+  // ============= 批註 API =============
+  annotation: {
+    create: (clauseId: number, userId: number, content: string, type?: 'comment' | 'suggestion' | 'question' | 'issue') =>
+      ipcRenderer.invoke(ANNOTATION_CHANNELS.CREATE, { clauseId, userId, content, type }),
+    
+    getByClause: (clauseId: number, userId: number) =>
+      ipcRenderer.invoke(ANNOTATION_CHANNELS.GET_BY_CLAUSE, { clauseId, userId }),
+    
+    update: (annotationId: number, userId: number, content: string) =>
+      ipcRenderer.invoke(ANNOTATION_CHANNELS.UPDATE, { annotationId, userId, content }),
+    
+    delete: (annotationId: number, userId: number) =>
+      ipcRenderer.invoke(ANNOTATION_CHANNELS.DELETE, { annotationId, userId }),
+    
+    resolve: (annotationId: number, userId: number) =>
+      ipcRenderer.invoke(ANNOTATION_CHANNELS.RESOLVE, { annotationId, userId }),
+    
+    getMentions: (userId: number, projectId: number) =>
+      ipcRenderer.invoke(ANNOTATION_CHANNELS.GET_MENTIONS, { userId, projectId }),
+    
+    markMentionRead: (mentionId: number, userId: number) =>
+      ipcRenderer.invoke(ANNOTATION_CHANNELS.MARK_MENTION_READ, { mentionId, userId })
+  },
+
+  // ============= 文件操作 API =============
   file: {
     selectFile: (title?: string, filters?: Array<{ name: string; extensions: string[] }>, defaultPath?: string) =>
       ipcRenderer.invoke(FILE_CHANNELS.SELECT_FILE, { title, filters, defaultPath }),
@@ -198,8 +298,8 @@ const api = {
   }
 };
 
-// ?�露 API ?�渲?�進�?
+// 暴露 API 到渲染進程
 contextBridge.exposeInMainWorld('electronAPI', api);
 
-// TypeScript 類�??��?（用?�渲?�進�?�?
+// TypeScript 類型定義（用於渲染進程）
 export type ElectronAPI = typeof api;

@@ -1,0 +1,104 @@
+.export-modal-content {
+  padding: 16px 0;
+}
+
+.document-info {
+  margin-bottom: 24px;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.export-options {
+  margin-bottom: 24px;
+}
+
+.export-options .ant-space {
+  width: 100%;
+}
+
+.export-formats {
+  margin-bottom: 16px;
+}
+
+.format-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.export-button {
+  height: auto;
+  padding: 16px;
+  text-align: left;
+}
+
+.export-button .button-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.export-button .button-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.export-button .button-description {
+  font-size: 12px;
+  opacity: 0.8;
+  font-weight: normal;
+}
+
+.pdf-button {
+  background: #ff4d4f;
+  border-color: #ff4d4f;
+}
+
+.pdf-button:hover {
+  background: #ff7875;
+  border-color: #ff7875;
+}
+
+.docx-button {
+  background: #1890ff;
+  border-color: #1890ff;
+}
+
+.docx-button:hover {
+  background: #40a9ff;
+  border-color: #40a9ff;
+}
+
+.report-button {
+  background: #52c41a;
+  border-color: #52c41a;
+  color: white;
+}
+
+.report-button:hover {
+  background: #73d13d;
+  border-color: #73d13d;
+  color: white;
+}
+
+.export-note {
+  margin-top: 16px;
+  padding: 12px;
+  background: #e6f7ff;
+  border-radius: 4px;
+  border: 1px solid #91d5ff;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .export-button .button-title {
+    font-size: 14px;
+  }
+
+  .export-button .button-description {
+    font-size: 11px;
+  }
+}

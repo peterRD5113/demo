@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      const response = await window.electronAPI.auth.login({ username, password });
+      const response = await window.electronAPI.auth.login(username, password);
 
       if (response.success && response.data) {
         const { token: newToken, user: userData } = response.data;

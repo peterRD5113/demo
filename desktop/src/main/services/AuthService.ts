@@ -40,7 +40,7 @@ interface LoginResponse {
 
 class AuthService {
   /**
-   * User login
+   * User login with failed attempt tracking
    */
   async login(username: string, password: string): Promise<LoginResponse> {
     try {
@@ -48,8 +48,8 @@ class AuthService {
       validateUsername(username);
       validatePassword(password);
 
-      // Verify user credentials
-      const user = userRepository.verifyPassword(username, password);
+      // Find user by username
+      const user = userRepository.findByUsername(username);
       
       if (!user) {
         return {
@@ -59,12 +59,39 @@ class AuthService {
       }
 
       // Check if account is locked
-      if (user.is_locked) {
+      if (userRepository.isAccountLocked(user.id)) {
         return {
           success: false,
-          message: 'Account is locked, please contact administrator'
+          message: 'Account is locked due to too many failed login attempts. Please try again in 10 minutes.'
         };
       }
+
+      // Verify password
+      const isPasswordValid = userRepository.verifyPassword(username, password);
+      
+      if (!isPasswordValid) {
+        // Increment login attempts
+        const attempts = userRepository.incrementLoginAttempts(user.id);
+        
+        // Lock account if attempts >= 5
+        if (attempts >= 5) {
+          userRepository.lockAccount(user.id, 600); // Lock for 10 minutes (600 seconds)
+          return {
+            success: false,
+            message: 'Too many failed login attempts. Account locked for 10 minutes.'
+          };
+        }
+        
+        // Return remaining attempts
+        const remainingAttempts = 5 - attempts;
+        return {
+          success: false,
+          message: `Invalid username or password. ${remainingAttempts} attempt(s) remaining before account lock.`
+        };
+      }
+
+      // Login successful - reset login attempts
+      userRepository.resetLoginAttempts(user.id);
 
       // Generate tokens
       const token = this.generateToken(user);

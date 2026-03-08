@@ -1,4 +1,4 @@
-// ??????
+﻿// ??????
 export interface User {
   id: number;
   username: string;
@@ -53,11 +53,12 @@ export interface Document {
   id: number;
   project_id: number;
   name: string;
-  original_name: string;
+  original_filename: string;
   file_type: 'docx' | 'pdf' | 'txt';
   file_size: number;
   file_path: string;
-  status: 'parsing' | 'ready' | 'error';
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  error_message?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -165,3 +166,4 @@ export interface PaginatedResponse<T> {
   page: number;
   pageSize: number;
 }
+
