@@ -108,14 +108,14 @@ const DocumentReviewPage: React.FC = () => {
   };
 
   const loadRisks = async () => {
-    if (!token || !documentId || !projectId) return;
+    if (!token || !documentId) return;
 
     try {
       const tokenPayload = JSON.parse(atob(token.split('.')[1]));
       const userId = tokenPayload.userId;
 
       const response = await window.api.risk.list(
-        parseInt(projectId),
+        parseInt(documentId),  // 使用 documentId 而不是 projectId
         userId,
         1,
         100
@@ -125,7 +125,7 @@ const DocumentReviewPage: React.FC = () => {
         const allRisks = response.data.items || [];
         setRisks(allRisks);
 
-        // ???ID????
+        // 按條款ID分組風險
         const riskMap = new Map<number, Risk[]>();
         allRisks.forEach((risk: Risk) => {
           if (!riskMap.has(risk.clause_id)) {
@@ -136,7 +136,7 @@ const DocumentReviewPage: React.FC = () => {
         setRisksByClause(riskMap);
       }
     } catch (error) {
-      console.error('??????:', error);
+      console.error('加載風險失敗:', error);
     }
   };
 
