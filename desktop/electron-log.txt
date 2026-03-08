@@ -1,0 +1,25 @@
+======================================== 
+Starting Electron Application 
+======================================== 
+ 
+Current directory: C:\Users\fortu\Desktop\Project\Demo\desktop 
+ 
+Checking files... 
+[OK] Main process file found 
+[OK] Renderer file found 
+ 
+Starting Electron... 
+ 
+
+App threw an error during load
+Error: 數據庫未初始化，請先調用 initialize()
+    at DatabaseConnection.getDatabase (C:\Users\fortu\Desktop\Project\Demo\desktop\dist\main\database\connection.js:122:19)
+    at getDb (C:\Users\fortu\Desktop\Project\Demo\desktop\dist\main\database\connection.js:217:33)
+    at new BaseRepository (C:\Users\fortu\Desktop\Project\Demo\desktop\dist\main\repositories\BaseRepository.js:11:42)
+    at new UserRepository (C:\Users\fortu\Desktop\Project\Demo\desktop\dist\main\repositories\UserRepository.js:16:9)
+    at Object.<anonymous> (C:\Users\fortu\Desktop\Project\Demo\desktop\dist\main\repositories\UserRepository.js:162:26)
+    at Module._compile (node:internal/modules/cjs/loader:1271:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1326:10)
+    at Module.load (node:internal/modules/cjs/loader:1126:32)
+    at Module._load (node:internal/modules/cjs/loader:967:12)
+    at c._load (node:electron/js2c/node_init:2:13672)

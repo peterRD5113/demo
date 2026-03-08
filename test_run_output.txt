@@ -1,0 +1,272 @@
+﻿node.exe : PASS unit_tests/test_repositories.test.ts
+位於 線路:1 字元:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\fortu\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS unit_tests...itories.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  UserRepository
+    User Creation
+      ??should validate user data structure (2 ms)
+      ??should validate password encryption
+      ??should validate user roles (1 ms)
+    User Retrieval
+      ??should validate user ID
+      ??should validate username format
+    Password Operations
+      ??should validate password comparison
+      ??should validate password hash format
+  ProjectRepository
+    Project Creation
+      ??should validate project data (1 ms)
+      ??should validate project name length
+    Project Retrieval
+      ??should validate project ID
+      ??should validate pagination parameters (1 ms)
+    Project Password
+      ??should validate password hash
+  DocumentRepository
+    Document Creation
+      ??should validate document data
+      ??should validate file extension
+    Document Retrieval
+      ??should validate document ID (1 ms)
+  ClauseRepository
+    Clause Creation
+      ??should validate clause data
+      ??should validate clause number format
+    Clause Retrieval
+      ??should validate document ID for clause lookup
+  RiskRepository
+    Risk Rule Management
+      ??should validate risk rule data (1 ms)
+      ??should validate risk levels
+    Risk Match Recording
+      ??should validate risk match data (1 ms)
+  Repository Common Operations
+    CRUD Operations
+      ??should validate create operation
+      ??should validate read operation
+      ??should validate update operation
+      ??should validate delete operation
+    Query Operations
+      ??should validate pagination
+      ??should validate sorting
+      ??should validate filtering
+
+PASS unit_tests/services/RiskService.test.ts
+  RiskService
+    Risk Analysis
+      ??should validate document ID for analysis (1 ms)
+      ??should validate clause data structure
+      ??should validate risk rule structure (1 ms)
+    Risk Level Classification
+      ??should validate risk levels
+      ??should handle risk level comparison
+    Pattern Matching
+      ??should validate pattern format
+      ??should handle case-insensitive matching (1 ms)
+      ??should handle multiple pattern matches
+    Risk Detection
+      ??should detect risks in clause content
+      ??should handle no risk detection
+      ??should count risk occurrences
+    Risk Rule Management
+      ??should validate rule creation data
+      ??should validate rule ID for operations
+      ??should handle rule update data
+    Risk Match Recording
+      ??should validate risk match data
+      ??should handle match position tracking (1 ms)
+    Risk Statistics
+      ??should calculate risk distribution
+      ??should calculate total risk count
+      ??should calculate risk percentage
+    Document Risk Summary
+      ??should aggregate risks by document
+      ??should calculate highest risk level
+    Risk Filtering
+      ??should filter by risk level (1 ms)
+      ??should filter by clause ID
+      ??should filter by rule ID
+    Risk Validation
+      ??should validate risk data completeness (1 ms)
+      ??should validate matched text length
+    Error Handling
+      ??should handle missing document
+      ??should handle empty clause list
+      ??should handle no matching rules
+      ??should handle invalid risk level
+    Performance Considerations
+      ??should handle large clause sets
+      ??should handle multiple rules efficiently
+
+PASS unit_tests/services/DocumentService.test.ts
+  DocumentService
+    Document Upload
+      ??should validate file data (1 ms)
+      ??should validate file types (1 ms)
+      ??should validate file size limits
+      ??should validate project ID
+      ??should validate filename sanitization
+    Document Parsing
+      ??should validate document content extraction
+      ??should validate clause extraction
+      ??should validate page number extraction
+      ??should handle empty documents
+    Document Retrieval
+      ??should validate document ID
+      ??should validate project filter (1 ms)
+      ??should validate pagination
+    Document Update
+      ??should validate update data
+      ??should validate document status
+    Document Deletion
+      ??should validate document ID for deletion (1 ms)
+      ??should validate user permission
+      ??should use soft delete
+    File Storage
+      ??should validate file path
+      ??should validate unique filename generation (1 ms)
+      ??should validate file extension preservation
+    Document Processing
+      ??should validate processing status
+      ??should validate processing result
+      ??should handle processing errors (1 ms)
+    Clause Extraction
+      ??should validate clause structure
+      ??should validate clause numbering
+      ??should handle nested clauses (1 ms)
+    Document Search
+      ??should validate search query
+      ??should validate search filters
+    Document Statistics
+      ??should calculate document count
+      ??should calculate total file size
+      ??should calculate average processing time
+    Error Handling
+      ??should handle missing file
+      ??should handle invalid file type
+      ??should handle file too large
+      ??should handle parsing errors
+
+PASS unit_tests/utils/validation.test.ts
+  Validation Utils
+    Email Validation
+      ??should validate email format (1 ms)
+      ??should reject invalid email formats (1 ms)
+      ??should validate email parts
+    Password Validation
+      ??should validate password strength (1 ms)
+      ??should reject short passwords
+      ??should reject passwords without numbers
+      ??should reject passwords without letters
+      ??should validate password complexity (1 ms)
+    Username Validation
+      ??should validate username format
+      ??should reject short usernames
+      ??should reject long usernames
+      ??should reject usernames with special characters (1 ms)
+      ??should validate username characters
+    Required String Validation
+      ??should validate non-empty strings
+      ??should reject empty strings
+      ??should validate string length (1 ms)
+      ??should handle null and undefined
+      ??should validate minimum length
+      ??should validate maximum length
+    Input Sanitization
+      ??should trim whitespace (1 ms)
+      ??should handle special characters (2 ms)
+      ??should validate alphanumeric input
+    Data Type Validation
+      ??should validate string type
+      ??should validate number type
+      ??should validate boolean type
+    Range Validation
+      ??should validate numeric ranges
+      ??should reject out of range values
+    Pattern Matching
+      ??should validate URL format
+      ??should validate phone number format (1 ms)
+      ??should validate date format
+
+PASS unit_tests/services/AuthService.test.ts
+  AuthService
+    User Registration
+      ??should validate username requirements (1 ms)
+      ??should validate password strength
+      ??should validate email format (1 ms)
+    User Login
+      ??should require username and password
+      ??should handle invalid credentials
+    Token Management
+      ??should generate JWT tokens
+      ??should validate token structure (1 ms)
+    Password Management
+      ??should validate password change requirements
+      ??should reject weak new passwords
+      ??should reject same old and new password
+    User Data Access
+      ??should handle user lookup by ID
+      ??should return null for non-existent users
+    Password Validation Rules
+      ??should accept strong passwords (1 ms)
+      ??should reject weak passwords
+    Email Validation
+      ??should accept valid email formats
+      ??should reject invalid email formats
+    Username Validation
+      ??should accept valid usernames
+      ??should reject invalid usernames
+    Authentication Flow
+      ??should follow proper registration flow
+      ??should follow proper login flow
+
+PASS unit_tests/services/ProjectService.test.ts
+  ProjectService
+    Project Creation
+      ??should validate project name requirements (1 ms)
+      ??should validate project description
+      ??should require user ID for project creation (1 ms)
+      ??should handle project creation with valid data
+    Project Retrieval
+      ??should validate project ID for lookup (1 ms)
+      ??should handle pagination parameters
+      ??should validate user ownership check
+    Project Update
+      ??should validate update data (1 ms)
+      ??should require project ID for update
+      ??should verify user permission for update
+    Project Deletion
+      ??should validate project ID for deletion
+      ??should verify user permission for deletion
+      ??should use soft delete mechanism (1 ms)
+    Project Password Protection
+      ??should validate password requirements
+      ??should handle password verification
+      ??should require project ID for password operations
+    Project Search
+      ??should validate search query (1 ms)
+      ??should handle search with user filter
+    Project Listing
+      ??should validate pagination for user projects
+      ??should calculate pagination offset
+      ??should handle empty result set (1 ms)
+    Project Ownership Verification
+      ??should verify owner by user ID
+      ??should reject non-owner access
+      ??should handle admin override
+    Project Data Validation
+      ??should validate complete project data (1 ms)
+      ??should validate timestamps
+    Error Handling
+      ??should handle missing required fields
+      ??should handle invalid data types
+      ??should handle null or undefined values (1 ms)
+
+Test Suites: 6 passed, 6 total
+Tests:       174 passed, 174 total
+Snapshots:   0 total
+Time:        0.64 s, estimated 1 s
+Ran all test suites matching /unit_tests\\/i.

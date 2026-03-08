@@ -1,0 +1,198 @@
+---
+description: 測試要求規範 - 單元測試、API測試、測試腳本
+alwaysApply: true
+---
+
+# 測試驗收標準（必須完整實現）
+
+> ⚠️ 單元測試 + API測試 缺一不可，任何一項缺失直接不通過驗收
+
+## 3.3.4.4 驗收判定 ─ 以下情形直接視為不滿足驗收要求
+
+```
+❌ 缺少 unit_tests/ 單元測試目錄或測試腳本
+❌ 缺少 API_tests/ 接口測試目錄或測試腳本
+❌ 測試覆蓋明顯不足（只有 1-2 個用例，沒有核心業務路徑覆蓋）
+❌ run_tests.sh 無法執行 或 執行後無清晰結果輸出（不知道通過幾個/失敗幾個）
+```
+
+> 測試用例必須**覆蓋絕大多數功能點和主要業務邏輯路徑**，驗收方會通過執行測試腳本來確認。
+
+
+## 必要目錄結構（必須在項目根目錄創建）
+
+```
+項目根目錄/
+├── unit_tests/
+│   ├── test_<module>.py  (或 *.test.ts 等)
+│   └── README.md         (說明如何運行)
+├── API_tests/
+│   ├── test_api_<feature>.py  (或 postman_collection.json)
+│   └── README.md
+└── run_tests.sh           ← 一鍵執行腳本（必須）
+```
+
+## run_tests.sh 模板（必須輸出清晰結果）
+
+```bash
+#!/bin/bash
+set -e
+
+echo "=========================================="
+echo "  Running Unit Tests"
+echo "=========================================="
+cd unit_tests
+python -m pytest -v --tb=short 2>&1 | tee ../test_results_unit.log
+cd ..
+
+echo ""
+echo "=========================================="
+echo "  Running API Tests"
+echo "=========================================="
+cd API_tests
+python -m pytest -v --tb=short 2>&1 | tee ../test_results_api.log
+cd ..
+
+echo ""
+echo "=========================================="
+echo "  Test Summary"
+echo "=========================================="
+echo "Unit Tests: $(grep -E 'passed|failed' test_results_unit.log | tail -1)"
+echo "API Tests:  $(grep -E 'passed|failed' test_results_api.log | tail -1)"
+```
+
+## 單元測試必須覆蓋
+
+### 1. Happy Path（正常流程）
+```python
+def test_user_login_success():
+    """正常登錄流程"""
+    result = auth_service.login("user@test.com", "password123")
+    assert result["code"] == 200
+    assert "token" in result["data"]
+
+def test_create_order_success():
+    """正常創建訂單"""
+    order = order_service.create(user_id=1, product_id=1, quantity=2)
+    assert order.status == "pending"
+    assert order.total_price > 0
+```
+
+### 2. 輸入校驗（邊界/異常）
+```python
+def test_login_with_invalid_email():
+    """非法 email 格式"""
+    with pytest.raises(ValidationError):
+        auth_service.login("not-an-email", "password")
+
+def test_create_order_with_negative_quantity():
+    """負數庫存邊界"""
+    with pytest.raises(ValueError, match="quantity must be positive"):
+        order_service.create(user_id=1, product_id=1, quantity=-1)
+
+def test_inventory_cannot_go_below_zero():
+    """庫存不能為負（業務隱含約束）"""
+    inventory_service.set_stock(product_id=1, quantity=1)
+    with pytest.raises(InsufficientStockError):
+        order_service.create(user_id=1, product_id=1, quantity=999)
+```
+
+### 3. 狀態轉換
+```python
+def test_order_status_flow():
+    """訂單狀態機：pending → paid → shipped → completed"""
+    order = create_test_order()
+    assert order.status == "pending"
+    
+    order_service.pay(order.id)
+    assert order.status == "paid"
+    
+    order_service.ship(order.id)
+    assert order.status == "shipped"
+
+def test_cannot_cancel_shipped_order():
+    """已發貨訂單不可取消"""
+    order = create_shipped_order()
+    with pytest.raises(InvalidStateTransitionError):
+        order_service.cancel(order.id)
+```
+
+## API 接口測試必須覆蓋
+
+### 1. 正常響應
+```python
+def test_login_api_returns_token():
+    response = client.post("/api/auth/login", json={
+        "username": "admin",
+        "password": "admin123"
+    })
+    assert response.status_code == 200
+    assert response.json()["data"]["token"]
+
+def test_get_user_list_with_pagination():
+    response = client.get("/api/users?page=1&pageSize=10", headers=auth_header)
+    data = response.json()
+    assert data["code"] == 200
+    assert "total" in data["data"]
+    assert "list" in data["data"]
+    assert len(data["data"]["list"]) <= 10
+```
+
+### 2. 認證錯誤（401）
+```python
+def test_protected_route_without_token():
+    response = client.get("/api/users")
+    assert response.status_code == 401
+    assert response.json()["code"] == 401
+
+def test_protected_route_with_expired_token():
+    response = client.get("/api/users", headers={"Authorization": "Bearer expired.token"})
+    assert response.status_code == 401
+```
+
+### 3. 權限錯誤（403）
+```python
+def test_normal_user_cannot_access_admin_api():
+    """普通用戶不能訪問管理員接口"""
+    response = client.delete("/api/admin/users/1", headers=normal_user_header)
+    assert response.status_code == 403
+    assert response.json()["code"] == 403
+
+def test_user_cannot_access_other_users_data():
+    """對象級授權：用戶A不能訪問用戶B的資源（IDOR 防護）"""
+    response = client.get(f"/api/orders/{other_user_order_id}", headers=user_a_header)
+    assert response.status_code == 403
+```
+
+### 4. 參數錯誤（400）
+```python
+def test_login_with_missing_username():
+    response = client.post("/api/auth/login", json={"password": "123"})
+    assert response.status_code == 400
+    assert "username" in response.json()["msg"].lower()
+
+def test_create_order_with_invalid_quantity():
+    response = client.post("/api/orders", json={"product_id": 1, "quantity": 0}, 
+                          headers=auth_header)
+    assert response.status_code == 400
+```
+
+### 5. 不存在資源（404）
+```python
+def test_get_nonexistent_user():
+    response = client.get("/api/users/99999", headers=auth_header)
+    assert response.status_code == 404
+    assert response.json()["code"] == 404
+```
+
+## 測試輸出標準
+每個測試套件執行後必須輸出：
+```
+========= Test Results =========
+PASSED: test_user_login_success
+PASSED: test_login_with_invalid_email  
+FAILED: test_inventory_cannot_go_below_zero
+  → Expected InsufficientStockError, got none
+================================
+Total: 15 | Passed: 14 | Failed: 1
+```

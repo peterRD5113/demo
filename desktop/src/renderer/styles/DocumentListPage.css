@@ -1,0 +1,39 @@
+/* 文檔列表頁面樣式 */
+.document-list-layout {
+  min-height: 100vh;
+  background-color: #f0f2f5;
+}
+
+.document-list-content {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.document-list-content .ant-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* 上傳按鈕樣式 */
+.document-list-content .ant-upload {
+  display: inline-block;
+}
+
+/* 表格樣式 */
+.document-list-content .ant-table-tbody > tr:hover {
+  background-color: #f5f7fa;
+}
+
+/* 狀態標籤 */
+.document-list-content .ant-tag {
+  border-radius: 4px;
+  padding: 4px 12px;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .document-list-content {
+    padding: 16px;
+  }
+}

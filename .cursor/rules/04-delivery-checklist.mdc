@@ -1,0 +1,309 @@
+---
+description: 交付物規範 - questions.md、trajectory、壓縮包結構
+alwaysApply: true
+---
+
+# 交付物規範（Repo代码生成任务手册 V4.2.0）
+
+## 交付壓縮包目錄結構
+
+```
+提交壓縮包/
+├── pure_frontend/    ← 根據項目類型選擇：
+│   └── [項目代碼]      pure_frontend / pure_backend / fullstack / desktop
+├── prompt.md         ← 原始Prompt（必須）
+├── trajectory.json   ← AI開發軌迹 OpenAI格式（必須）
+├── questions.md      ← 業務邏輯疑問記錄（必須）
+└── docs/
+    ├── design.md
+    └── api-spec.md
+```
+
+## trajectory.json：開發軌迹文件（必須）
+
+### ⚠️ 模型軌迹需提交三個文件（缺一不可）
+
+```
+① trajectory.json          ← 轉換後的 OpenAI 格式 JSON（必須）
+② session 原始文件          ← 轉換前的原始 session 文件（必須）
+③ readme（說明文檔）        ← 說明使用了什麼工具/模型/開發過程（必須）
+```
+
+> 使用 `convert_ai_session.py` 腳本支持自動識別並轉換：Claude JSONL / Codex JSONL / Gemini JSON / Kilocode JSON / OpenCode JSON
+
+### 各工具 Session 文件獲取路徑
+
+#### Codex
+| 平台 | 路徑 |
+|------|------|
+| Windows | `C:\Users\<用戶名>\.codex\sessions\2026\02\06\` |
+| Mac/Linux | `/Users/<用戶名>/.codex/sessions/2026/02/06/` |
+
+#### OpenCode（Windows/Mac 通用）
+```bash
+opencode session list          # 記錄 session_id
+opencode export <session_id> > session.json   # 導出
+```
+
+#### Claude CLI
+| 平台 | 路徑 |
+|------|------|
+| Windows | `C:\Users\<用戶目錄>\.claude\projects\` |
+| Mac/Linux | `~/.claude/projects/` |
+> `sessions-index.json` 是所有對話的索引文件，找到對應 session_id 後取完整日誌文件
+
+#### Gemini CLI
+| 平台 | 路徑 |
+|------|------|
+| Windows | `C:\Users\<用戶目錄>\.gemini\tmp\<project_hash>\` |
+| Mac/Linux | `~/.gemini/tmp/<project_hash>/` |
+> **步驟**：①先看 `logs.json`（匯總文件，含 session_id 和用戶輸入提示詞）→ ②找到對應 session_id → ③去 `chats/<session_id>.json` 取具體軌迹文件
+
+#### Kilocode（VSCode）
+```
+Windows: C:\Users\<用戶目錄>\AppData\Roaming\Code\User\globalStorage\kilocode.kilo-code\tasks\<task_id>\api_conversation_history.json
+```
+
+#### Kilocode（IDEA / JetBrains）
+```
+Windows: C:\Users\<用戶目錄>\.kilocode\globalStorage\kilo code.kilo-code\tasks\<task_id>\api_conversation_history.json
+```
+
+> 使用 `convert_ai_session.py` 腳本統一轉換為 OpenAI 格式
+
+### 手動補寫時的 JSON 格式規範
+
+當使用不支援腳本轉換的工具（如 Cursor）開發時，需手動構造 trajectory.json：
+
+```json
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": [{"type": "text", "text": "用戶輸入內容"}]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {"type": "text", "text": "助手回覆內容"},
+        {
+          "type": "tool_use",
+          "tool_call_id": "call_abc123",
+          "name": "函數名",
+          "arguments": "{\"param\": \"value\"}"
+        }
+      ],
+      "tool_calls": [
+        {
+          "id": "call_abc123",
+          "type": "function",
+          "function": {
+            "name": "函數名",
+            "arguments": "{\"param\": \"value\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_abc123",
+      "content": [{"type": "text", "text": "工具執行結果"}],
+      "metadata": {
+        "exit_code": 0,
+        "duration_seconds": 1.23
+      }
+    }
+  ],
+  "meta": {
+    "session_meta": {
+      "id": "session-uuid",
+      "timestamp": "2026-03-07T10:00:00Z",
+      "cwd": "/project/path",
+      "originator": "ide",
+      "cli_version": "1.0.0",
+      "source": "cursor",
+      "model_provider": "anthropic",
+      "base_instructions": {"text": "系統提示詞"},
+      "git": {}
+    },
+    "turn_contexts": [
+      {
+        "cwd": "/project/path",
+        "approval_policy": "auto",
+        "sandbox_policy": {"type": "none", "network_access": true},
+        "model": "claude-sonnet-4-6",
+        "personality": "assistant",
+        "collaboration_mode": {
+          "mode": "single",
+          "settings": {
+            "model": "claude-sonnet-4-6",
+            "reasoning_effort": "high",
+            "developer_instructions": ""
+          }
+        },
+        "effort": "high",
+        "summary": "本輪對話摘要",
+        "user_instructions": "用戶本輪指令",
+        "truncation_policy": {"mode": "auto", "limit": 200000},
+        "_timestamp": "2026-03-07T10:00:00Z"
+      }
+    ],
+    "token_counts": null
+  }
+}
+```
+
+### 關鍵欄位說明
+
+| 欄位 | 說明 |
+|------|------|
+| `messages[].role` | 角色：`user` / `assistant` / `tool` |
+| `content[].type` | 類型：`text`（文字）/ `tool_use`（工具調用） |
+| `tool_calls[].id` | 工具調用唯一標識，需與 `tool_call_id` 對應 |
+| `metadata.exit_code` | 工具執行退出碼（0=成功） |
+| `metadata.duration_seconds` | 執行耗時（秒） |
+| `session_meta.originator` | 發起方：`cli` / `ide` / `web` |
+| `token_counts` | Token 消耗統計（可填 null） |
+
+## questions.md：業務邏輯疑問記錄（必須文件）
+
+> **⚠️ 核心要求**：記錄你在理解 Prompt 中 **業務邏輯** 時的所有疑問。
+
+### 1. 記錄重點
+- **業務流程**：例如訂單從創建到完成的完整生命週期。
+- **業務規則**：例如折扣計算、取消限制、狀態轉換條件。
+- **數據關係**：例如用戶與資源的歸屬、一對多或多對多的關聯邏輯。
+- **邊界條件**：例如庫存下限、時間重疊、極端數值處理、權限越界等。
+
+### 2. 強制格式
+- **格式**：問題 + 你的理解/假設 + 解決方式
+
+### 3. 示例模板
+```markdown
+# 業務邏輯疑問記錄
+
+## 1. 訂單取消後的庫存回退邏輯
+- **問題**：Prompt 提到"用戶可以取消訂單"，但未說明已支付訂單取消後庫存如何處理。
+- **我的理解**：已支付訂單取消應立即回退庫庫存，未支付訂單超時自動取消（由系統定時任務處理）。
+- **解決方式**：實現了訂單狀態機，取消操作會根據訂單狀態觸發對應的庫存回退事件。
+
+## 2. 用戶權限的繼承關係
+- **問題**：Prompt 中有"管理員"和"超級管理員"，但未明確權限範圍差異（如：管理員是否可刪除超級管理員創建的數據）。
+- **我的理解**：超級管理員可管理所有數據，普通管理員只能管理自己創建的數據。
+- **解決方式**：在權限校驗邏輯中增加了 scope 字段，用於區分數據的操作範圍（Owner vs Global）。
+
+## 3. 數據刪除策略
+- **問題**：Prompt 未說明"刪除用戶"是物理刪除還是標記刪除。
+- **我的理解**：考慮到數據審計與操作回溯需求，採用邏輯刪除（soft delete）。
+- **解決方式**：所有表增加 `deleted_at` 字段，查詢時過濾掉已刪除的記錄。
+```
+
+## docs/design.md 模板
+
+```markdown
+# 系統設計文檔
+
+## 架構概覽
+[系統架構圖或說明]
+
+## 技術棧
+- 後端：Python 3.10 / FastAPI
+- 前端：React 18 / Ant Design
+- 數據庫：PostgreSQL 14
+- 緩存：Redis 7
+
+## 數據庫設計
+[主要表結構]
+
+## 核心業務流程
+[主要流程說明]
+
+## 模塊說明
+[各模塊職責]
+```
+
+## docs/api-spec.md 模板
+
+```markdown
+# API 規格說明
+
+## 基礎信息
+- Base URL: http://localhost:8080/api
+- 認證方式：Bearer Token（JWT）
+- 統一響應格式：
+  ```json
+  {
+    "code": 200,
+    "msg": "success",
+    "data": {}
+  }
+  ```
+
+## 認證接口
+
+### POST /auth/login
+**請求**：
+```json
+{"username": "string", "password": "string"}
+```
+**響應**：
+```json
+{"code": 200, "data": {"token": "string", "expires_in": 86400}}
+```
+
+## 錯誤碼說明
+| HTTP狀態 | code | 說明 |
+|---------|------|------|
+| 400 | 400 | 請求參數錯誤 |
+| 401 | 401 | 未認證/Token過期 |
+| 403 | 403 | 無權限 |
+| 404 | 404 | 資源不存在 |
+| 500 | 500 | 服務器錯誤 |
+```
+
+## 廢棄題目判斷標準
+
+在開始開發前，先確認是否需要廢棄：
+
+```
+❌ 廢棄條件（任意一條）：
+- 核心功能必須調用第三方 SaaS 無 Mock 方案（如：必須真實收款）
+- 強制要求 Windows 系統才能運行
+- Prompt 缺失核心主題（"請做個網站" 無具體內容）
+- 缺失必要的素材圖片/鏈接
+
+✅ 可做條件：
+- 支付可 Mock
+- 第三方 API 可 Mock 或模擬
+- 跨平台（Docker 可運行）
+```
+
+## 自測流程（提交前必做）
+
+```
+1. 新開一個獨立 session（不用開發 session）
+2. 將題目 Prompt 填入 AI Report Prompt 的 {prompt} 位置
+3. 加上聲明："不允許執行docker命令和執行測試，只讀靜態文件作報告"
+4. 讓模型執行逐條驗收，輸出到 .tmp/report.md
+5. 將自測報告隨交付物一起提交
+```
+
+## 提交前最終 Checklist
+
+```
+[ ] docker compose up --build 成功啟動（後端/全棧）
+[ ] README 中所有 URL/端口 與實際一致
+[ ] README 中測試賬號可用
+[ ] unit_tests/ 目錄存在且可執行
+[ ] API_tests/ 目錄存在且可執行
+[ ] run_tests.sh 有輸出測試結果匯總
+[ ] questions.md 存在且記錄了業務疑問
+[ ] docs/design.md 存在
+[ ] docs/api-spec.md 存在
+[ ] 壓縮包中無 node_modules/ / .venv/ 等依賴目錄
+[ ] 代碼無個人密鑰/內網IP/本地絕對路徑
+[ ] 接口錯誤返回標準 JSON，非 Stack Trace
+[ ] 前端使用了主流 UI 框架（前端/全棧題）
+[ ] trajectory.json 已準備好（開發 session 轉換）
+[ ] 自測報告已完成並準備提交
+```

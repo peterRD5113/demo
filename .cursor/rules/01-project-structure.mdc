@@ -1,0 +1,202 @@
+---
+description: 工程結構、Docker容器化、目錄規範
+alwaysApply: true
+---
+
+# 工程結構與容器化規範
+
+## 標準目錄結構
+
+### 全棧項目
+```
+project-root/
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── utils/
+│   │   ├── api/
+│   │   └── hooks/
+│   ├── public/
+│   ├── package.json
+│   └── Dockerfile
+├── backend/
+│   ├── src/  或 app/
+│   │   ├── controllers/  或 routes/
+│   │   ├── services/
+│   │   ├── models/  或 repositories/
+│   │   ├── middlewares/
+│   │   └── utils/
+│   ├── requirements.txt  或 package.json
+│   └── Dockerfile
+├── unit_tests/          ← 必須存在
+├── API_tests/           ← 必須存在
+├── docs/
+│   ├── design.md
+│   └── api-spec.md
+├── docker-compose.yml   ← 必須存在（後端/全棧）
+├── README.md            ← 必須存在
+├── prompt.md
+├── questions.md         ← 必須存在
+└── run_tests.sh         ← 必須存在
+```
+
+## Docker 容器化規範（後端/全棧必須）
+
+### docker-compose.yml 必要元素
+```yaml
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"        # 必須顯式暴露
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/dbname
+    depends_on:
+      db:
+        condition: service_healthy  # 使用健康檢查，非 service_started
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_DB: dbname
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # 自動初始化
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d dbname"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+```
+
+### Dockerfile 規範
+```dockerfile
+# ✅ 正確：明確聲明所有依賴
+FROM python:3.10-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+
+# ❌ 禁止：依賴宿主機全局環境
+# RUN pip install -r /host/requirements.txt
+```
+
+## 環境變量規範
+- 必須提供 `.env.example` 文件（含所有必要變量）
+- 在 docker-compose.yml 中用 `env_file: .env` 或直接在 environment 中設默認值
+- 代碼中通過環境變量讀取配置，禁止硬編碼 IP/端口/密碼
+
+```python
+# ✅ 正確
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://localhost:5432/db")
+
+# ❌ 禁止
+DATABASE_URL = "postgresql://192.168.1.100:5432/db"
+```
+
+## 數據庫初始化規範
+- 數據庫建表必須自動執行（通過 init.sql 或 migration）
+- **禁止**要求用戶手動導入 SQL 腳本
+- 使用 ORM migration 或 entrypoint 腳本
+
+## ⛔ 3.7 不可驗收情形（直接失格，不進返修）
+
+### 啟動相關
+```
+❌ docker compose up 構建或啟動報錯
+❌ 容器啟動後立即退出 / 陷入重啟循環（CrashLoopBackOff）
+❌ 啟動腳本卡住等待用戶輸入（如：等待輸入密碼、確認 y/n）→ 必須能無人值守啟動
+❌ 引用需要鑑權的私有鏡像（公網無法 pull）
+```
+
+### 人工干預相關
+```
+❌ 需要手動創建 .env 文件才能運行
+   → 解決方案：提供 .env.example，或在 docker-compose.yml env 字段直接設默認值
+❌ 需要手動執行 SQL 腳本建表
+   → 解決方案：init.sql 掛載至 docker-entrypoint-initdb.d/
+❌ README 未說明啟動步驟，需要詢問才知道怎麼跑
+```
+
+### 環境隔離相關
+```
+❌ 代碼/配置含本地絕對路徑：C:/Users/Admin/... 或 /Users/name/...
+❌ 服務嘗試連接宿主機上未在 docker-compose 聲明的 DB/Redis
+❌ 依賴開發者本地全局安裝的庫（未在 Dockerfile 中 install）
+```
+
+### 文檔與實際不一致
+```
+❌ README 聲明端口 8080，實際 docker-compose 暴露 3000
+❌ README 測試賬號與代碼實際賬號不符
+❌ 按文檔操作後無法訪問服務或 API
+```
+
+### 依賴污染
+```
+❌ 提交包含 node_modules/ / .venv/ / __pycache__/ 等依賴目錄
+```
+
+## README 必要內容模板
+```markdown
+# 項目名稱
+
+## How to Run
+```bash
+docker compose up --build
+```
+
+## Services List
+| 服務 | 地址 |
+|------|------|
+| 前端 | http://localhost:3000 |
+| 後端 API | http://localhost:8080 |
+| API文檔 | http://localhost:8080/docs |
+
+## Verification
+1. 訪問 http://localhost:3000 確認前端正常顯示
+2. POST http://localhost:8080/api/auth/login
+   ```json
+   {"username": "admin", "password": "admin123"}
+   ```
+3. 預期返回：`{"code": 200, "data": {"token": "..."}}`
+
+## Test Accounts
+| 角色 | 用戶名 | 密碼 |
+|------|--------|------|
+| 管理員 | admin | admin123 |
+| 普通用戶 | user | user123 |
+```
+
+## 提交前清理 Checklist
+```
+❌ 刪除這些目錄後再提交：
+- node_modules/
+- .venv/ 或 venv/
+- __pycache__/
+- .next/ (Next.js build)
+- dist/ (build 產物)
+- .DS_Store
+- *.pyc
+
+❌ 確認沒有這些問題：
+- 代碼中沒有個人密鑰/內網IP
+- 沒有大段注釋掉的廢棄代碼
+- 沒有 console.log("111") 等調試日志
+```

@@ -1,0 +1,246 @@
+# 律影合同審閱與條款風險標註桌面工作台
+
+## 項目簡介
+
+律影合同審閱工作台是一款專為法務人員設計的桌面應用，支持本地導入合同文檔、自動識別風險條款、生成審閱意見並輸出修改版文件。
+
+## 技術棧
+
+- **框架**: Electron 28+ (桌面應用框架)
+- **前端**: React 18 + TypeScript 5
+- **UI 組件**: Ant Design 5 (中文界面)
+- **數據庫**: SQLite3 (本地存儲)
+- **文檔處理**:
+  - mammoth (docx 解析)
+  - pdf-lib + pdf.js (PDF 處理)
+  - docx (docx 生成)
+- **版本管理**: diff-match-patch (文本對比)
+- **加密**: crypto-js (敏感信息脫敏)
+- **構建工具**: Vite 5
+
+## 系統要求
+
+- Node.js >= 18.0.0
+- npm >= 9.0.0
+- 操作系統: Windows 10+, macOS 10.15+, Linux (Ubuntu 20.04+)
+- 內存: 最低 4GB，推薦 8GB
+- 硬盤: 最低 500MB 可用空間
+
+## 快速開始
+
+### 1. 安裝依賴
+
+```bash
+npm install
+```
+
+### 2. 開發模式運行
+
+```bash
+npm run dev
+```
+
+應用將在開發模式下啟動，支持熱重載。
+
+### 3. 構建應用
+
+```bash
+npm run build
+```
+
+構建產物將輸出到 `dist/` 目錄。
+
+### 4. 運行測試
+
+```bash
+# 運行所有測試
+npm test
+
+# 或使用測試腳本
+bash run_tests.sh
+```
+
+## 功能特性
+
+### 文檔處理
+- ✅ 支持導入 docx/pdf/txt 格式
+- ✅ 自動生成目錄與條款編號
+- ✅ 逐條審閱視圖
+- ✅ 對照修訂視圖
+
+### 風險識別
+- ✅ 可配置的風險規則庫
+- ✅ 自動標註風險條款（顏色標記）
+- ✅ 提供建議修改措辭
+- ✅ 支持多規則匹配與優先級排序
+
+### 審閱功能
+- ✅ 一鍵插入常用條款模板
+- ✅ 添加批註與評論
+- ✅ @同事待確認清單
+- ✅ 風險等級手動調整
+
+### 版本管理
+- ✅ 自動保存審閱歷史
+- ✅ 記錄審閱人、時間、變更摘要
+- ✅ 版本對比與回滾
+- ✅ 變更條款追蹤
+
+### 導出功能
+- ✅ 導出帶批註的 PDF
+- ✅ 導出修訂痕跡的 docx
+- ✅ 生成審閱摘要報告
+
+### 安全功能
+- ✅ 本地賬號登錄
+- ✅ 登錄失敗鎖定機制（5 次失敗鎖定 10 分鐘）
+- ✅ 項目訪問密碼保護
+- ✅ 敏感信息脫敏預覽
+- ✅ 一鍵清理緩存
+
+## 測試賬號
+
+### 管理員賬號
+- 用戶名: `admin`
+- 密碼: `Admin@123`
+- 權限: 完整權限，可管理用戶和規則庫
+
+### 普通用戶賬號
+- 用戶名: `user1`
+- 密碼: `User@123`
+- 權限: 審閱文檔、導出報告
+
+### 測試用戶賬號
+- 用戶名: `test`
+- 密碼: `Test@123`
+- 權限: 僅查看權限
+
+## 項目結構
+
+```
+desktop/
+├── src/
+│   ├── main/                 # Electron 主進程
+│   │   ├── index.ts         # 主進程入口
+│   │   ├── ipc/             # IPC 通信處理
+│   │   └── services/        # 後端服務
+│   ├── renderer/            # 渲染進程（React）
+│   │   ├── App.tsx          # 應用根組件
+│   │   ├── pages/           # 頁面組件
+│   │   ├── components/      # 通用組件
+│   │   ├── hooks/           # 自定義 Hooks
+│   │   ├── store/           # 狀態管理
+│   │   └── utils/           # 工具函數
+│   ├── shared/              # 共享代碼
+│   │   ├── types/           # TypeScript 類型定義
+│   │   ├── constants/       # 常量定義
+│   │   └── utils/           # 共享工具函數
+│   └── preload/             # Preload 腳本
+├── unit_tests/              # 單元測試
+├── API_tests/               # 功能測試
+├── docs/                    # 文檔
+├── resources/               # 資源文件
+│   ├── icons/              # 應用圖標
+│   └── templates/          # 條款模板
+├── database/                # 數據庫文件（運行時生成）
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+└── README.md
+```
+
+## 開發指南
+
+### 代碼規範
+
+項目使用 ESLint 和 Prettier 進行代碼規範檢查：
+
+```bash
+# 檢查代碼規範
+npm run lint
+
+# 自動修復
+npm run lint:fix
+
+# 格式化代碼
+npm run format
+```
+
+### 提交規範
+
+使用 Conventional Commits 規範：
+
+```
+feat: 新功能
+fix: 修復 bug
+docs: 文檔更新
+style: 代碼格式調整
+refactor: 重構
+test: 測試相關
+chore: 構建/工具鏈相關
+```
+
+### 調試
+
+#### 主進程調試
+```bash
+npm run dev:main
+```
+
+#### 渲染進程調試
+在開發模式下，按 `F12` 打開 Chrome DevTools。
+
+#### 日誌查看
+日誌文件位置：
+- Windows: `%APPDATA%/contract-review/logs/`
+- macOS: `~/Library/Logs/contract-review/`
+- Linux: `~/.config/contract-review/logs/`
+
+## 性能指標
+
+- ✅ 首次啟動時間: < 5 秒
+- ✅ 10MB 文檔打開時間: < 8 秒
+- ✅ 風險規則匹配: < 2 秒（1000 條款）
+- ✅ 版本保存: < 1 秒
+- ✅ 導出 PDF: < 5 秒（100 頁）
+
+## 常見問題
+
+### Q: 應用無法啟動？
+A: 請檢查 Node.js 版本是否 >= 18.0.0，並確保已正確安裝依賴。
+
+### Q: 文檔導入失敗？
+A: 請確認文檔格式正確，文件未損壞。支持的格式：docx, pdf, txt。
+
+### Q: 忘記密碼怎麼辦？
+A: 管理員可以在用戶管理界面重置密碼。如果忘記管理員密碼，請刪除數據庫文件 `database/app.db` 重新初始化（注意：會丟失所有數據）。
+
+### Q: 如何備份數據？
+A: 數據庫文件位於 `database/app.db`，定期備份此文件即可。
+
+### Q: 如何清理緩存？
+A: 在設置界面點擊"清理緩存"按鈕，或手動刪除 `database/cache/` 目錄。
+
+## 文檔
+
+詳細文檔請參考 `docs/` 目錄：
+
+- [系統設計文檔](docs/design.md)
+- [架構設計](docs/architecture.md)
+- [API 規格說明](docs/api-spec.md)
+- [UI/UX 設計規範](docs/ui-ux-design.md)
+- [數據庫設計](docs/database-schema.md)
+- [安全設計](docs/security-design.md)
+- [測試策略](docs/testing-strategy.md)
+
+## 許可證
+
+本項目僅供內部使用，未經授權不得分發或商用。
+
+## 聯繫方式
+
+如有問題或建議，請聯繫開發團隊。
+
+---
+
+**注意**: 本應用處理敏感法律文檔，請確保在安全的環境中使用，並定期備份重要數據。

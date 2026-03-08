@@ -1,0 +1,320 @@
+﻿/**
+ * ?�戶 Repository ?��?測試
+ * 測試?�戶?��?訪�?層�???
+ */
+
+import { userRepository } from '../desktop/src/main/repositories/UserRepository';
+
+describe('UserRepository - ?�戶?��?訪�?測試', () => {
+  // 測試?�戶ID?�表，用?��???
+  const testUserIds: number[] = [];
+
+  // 測試後�???
+  afterEach(() => {
+    testUserIds.forEach(id => {
+      try {
+        userRepository.delete(id);
+      } catch (error) {
+        // 忽略?�除?�誤
+      }
+    });
+    testUserIds.length = 0;
+  });
+
+  describe('?�建?�戶測試', () => {
+    test('?�建?�戶 - ?�該返�??�戶ID且�?碼已?��?', () => {
+      const userId = userRepository.createUser('newuser', 'Password@123', 'user');
+      testUserIds.push(userId);
+
+      expect(userId).toBeGreaterThan(0);
+
+      // 驗�??�戶已創�?
+      const user = userRepository.findById(userId);
+      expect(user).toBeDefined();
+      expect(user?.username).toBe('newuser');
+      expect(user?.role).toBe('user');
+
+      // 驗�?密碼已�?密�?不是?��?�?
+      expect(user?.password_hash).not.toBe('Password@123');
+      expect(user?.password_hash).toMatch(/^\$2[aby]\$/); // bcrypt ?��?
+    });
+
+    test('?�建管�??�用??- 角色?�該�?��', () => {
+      const userId = userRepository.createUser('adminuser', 'Admin@123', 'admin');
+      testUserIds.push(userId);
+
+      const user = userRepository.findById(userId);
+      expect(user?.role).toBe('admin');
+    });
+
+    test('?�建?��??�用??- 角色?�該�?��', () => {
+      const userId = userRepository.createUser('vieweruser', 'Viewer@123', 'viewer');
+      testUserIds.push(userId);
+
+      const user = userRepository.findById(userId);
+      expect(user?.role).toBe('viewer');
+    });
+  });
+
+  describe('?�詢?�戶測試', () => {
+    test('?��??�戶?�查�?- ?�該返�?�?��?�戶', () => {
+      const userId = userRepository.createUser('finduser', 'Test@123', 'user');
+      testUserIds.push(userId);
+
+      const user = userRepository.findByUsername('finduser');
+
+      expect(user).toBeDefined();
+      expect(user?.id).toBe(userId);
+      expect(user?.username).toBe('finduser');
+    });
+
+    test('?�詢不�??��??�戶??- ?�該返�? null', () => {
+      const user = userRepository.findByUsername('nonexistent');
+
+      expect(user).toBeNull();
+    });
+
+    test('?��?角色?�詢 - ?�該返�?該�??��??�?�用??, () => {
+      const userId1 = userRepository.createUser('admin1', 'Test@123', 'admin');
+      const userId2 = userRepository.createUser('admin2', 'Test@123', 'admin');
+      const userId3 = userRepository.createUser('user1', 'Test@123', 'user');
+      testUserIds.push(userId1, userId2, userId3);
+
+      const admins = userRepository.findByRole('admin');
+
+      expect(admins.length).toBeGreaterThanOrEqual(2);
+      expect(admins.some(u => u.id === userId1)).toBe(true);
+      expect(admins.some(u => u.id === userId2)).toBe(true);
+      expect(admins.every(u => u.role === 'admin')).toBe(true);
+    });
+
+    test('檢查?�戶?�是?��???- 存在?�該返�? true', () => {
+      const userId = userRepository.createUser('existuser', 'Test@123', 'user');
+      testUserIds.push(userId);
+
+      const exists = userRepository.usernameExists('existuser');
+
+      expect(exists).toBe(true);
+    });
+
+    test('檢查?�戶?�是?��???- 不�??��?該�???false', () => {
+      const exists = userRepository.usernameExists('notexistuser');
+
+      expect(exists).toBe(false);
+    });
+  });
+
+  describe('密碼驗�?測試', () => {
+    test('�?��密碼 - ?�該返�??�戶信息', () => {
+      const userId = userRepository.createUser('verifyuser', 'Correct@123', 'user');
+      testUserIds.push(userId);
+
+      const user = userRepository.verifyPassword('verifyuser', 'Correct@123');
+
+      expect(user).toBeDefined();
+      expect(user?.id).toBe(userId);
+    });
+
+    test('?�誤密碼 - ?�該返�? null', () => {
+      const userId = userRepository.createUser('verifyuser2', 'Correct@123', 'user');
+      testUserIds.push(userId);
+
+      const user = userRepository.verifyPassword('verifyuser2', 'Wrong@123');
+
+      expect(user).toBeNull();
+    });
+
+    test('?�戶不�???- ?�該返�? null', () => {
+      const user = userRepository.verifyPassword('nonexistent', 'Any@123');
+
+      expect(user).toBeNull();
+    });
+  });
+
+  describe('修改密碼測試', () => {
+    test('修改密碼 - ?��?碼�?該�???, () => {
+      const userId = userRepository.createUser('changeuser', 'Old@123', 'user');
+      testUserIds.push(userId);
+
+      // 修改密碼
+      userRepository.changePassword(userId, 'New@123');
+
+      // 驗�??��?碼可??
+      const userWithNew = userRepository.verifyPassword('changeuser', 'New@123');
+      expect(userWithNew).toBeDefined();
+
+      // 驗�??��?碼�??�用
+      const userWithOld = userRepository.verifyPassword('changeuser', 'Old@123');
+      expect(userWithOld).toBeNull();
+    });
+
+    test('修改密碼 - 密碼?�該?�新?��?', () => {
+      const userId = userRepository.createUser('changeuser2', 'Old@123', 'user');
+      testUserIds.push(userId);
+
+      const oldUser = userRepository.findById(userId);
+      const oldHash = oldUser?.password_hash;
+
+      userRepository.changePassword(userId, 'New@123');
+
+      const newUser = userRepository.findById(userId);
+      const newHash = newUser?.password_hash;
+
+      expect(newHash).not.toBe(oldHash);
+      expect(newHash).toMatch(/^\$2[aby]\$/);
+    });
+  });
+
+  describe('?��?失�?次數測試', () => {
+    test('增�?失�?次數 - ?�該�?��累�?', () => {
+      const userId = userRepository.createUser('failuser', 'Test@123', 'user');
+      testUserIds.push(userId);
+
+      const attempts1 = userRepository.incrementLoginAttempts(userId);
+      expect(attempts1).toBe(1);
+
+      const attempts2 = userRepository.incrementLoginAttempts(userId);
+      expect(attempts2).toBe(2);
+
+      const attempts3 = userRepository.incrementLoginAttempts(userId);
+      expect(attempts3).toBe(3);
+    });
+
+    test('?�置失�?次數 - ?�該歸零', () => {
+      const userId = userRepository.createUser('resetuser', 'Test@123', 'user');
+      testUserIds.push(userId);
+
+      userRepository.incrementLoginAttempts(userId);
+      userRepository.incrementLoginAttempts(userId);
+      userRepository.incrementLoginAttempts(userId);
+
+      userRepository.resetLoginAttempts(userId);
+
+      const user = userRepository.findById(userId);
+      expect(user?.login_attempts).toBe(0);
+    });
+  });
+
+  describe('賬�??��?測試', () => {
+    test('?��?賬�? - ?�該設置?��??��?', () => {
+      const userId = userRepository.createUser('lockuser', 'Test@123', 'user');
+      testUserIds.push(userId);
+
+      userRepository.lockAccount(userId, 600); // ?��? 10 ?��?
+
+      const user = userRepository.findById(userId);
+      expect(user?.locked_until).toBeDefined();
+      expect(new Date(user!.locked_until!).getTime()).toBeGreaterThan(Date.now());
+    });
+
+    test('檢查賬�??��??�??- ?��??��??�該返�? true', () => {
+      const userId = userRepository.createUser('lockuser2', 'Test@123', 'user');
+      testUserIds.push(userId);
+
+      userRepository.lockAccount(userId, 600);
+
+      const isLocked = userRepository.isAccountLocked(userId);
+      expect(isLocked).toBe(true);
+    });
+
+    test('檢查賬�??��??�??- ?��?定�?該�???false', () => {
+      const userId = userRepository.createUser('unlockuser', 'Test@123', 'user');
+      testUserIds.push(userId);
+
+      const isLocked = userRepository.isAccountLocked(userId);
+      expect(isLocked).toBe(false);
+    });
+
+    test('檢查賬�??��??�??- ?��??��??��??�該?��?�??', () => {
+      const userId = userRepository.createUser('expireuser', 'Test@123', 'user');
+      testUserIds.push(userId);
+
+      // 設置已�??��??��??��?
+      const pastTime = new Date(Date.now() - 1000).toISOString();
+      userRepository.update(userId, { locked_until: pastTime } as any);
+
+      const isLocked = userRepository.isAccountLocked(userId);
+      expect(isLocked).toBe(false);
+
+      // 驗�?失�?次數已�?�?
+      const user = userRepository.findById(userId);
+      expect(user?.login_attempts).toBe(0);
+    });
+  });
+
+  describe('?�新?�戶角色測試', () => {
+    test('?�新角色 - ?�該?��?', () => {
+      const userId = userRepository.createUser('roleuser', 'Test@123', 'user');
+      testUserIds.push(userId);
+
+      userRepository.updateRole(userId, 'admin');
+
+      const user = userRepository.findById(userId);
+      expect(user?.role).toBe('admin');
+    });
+  });
+
+  describe('?��??�戶?��?對象測試', () => {
+    test('?��??�戶?��? - 不�?該�??��?�?, () => {
+      const userId = userRepository.createUser('responseuser', 'Test@123', 'user');
+      testUserIds.push(userId);
+
+      const user = userRepository.findById(userId);
+      const response = userRepository.getUserResponse(user!);
+
+      expect(response).toBeDefined();
+      expect(response.id).toBe(userId);
+      expect(response.username).toBe('responseuser');
+      expect(response.role).toBe('user');
+      expect(response).not.toHaveProperty('password_hash');
+      expect(response).not.toHaveProperty('login_attempts');
+      expect(response).not.toHaveProperty('locked_until');
+    });
+  });
+
+  describe('?��??�詢測試', () => {
+    test('?��??�詢?�戶 - ?�該返�?�?��?��??�數??, () => {
+      // ?�建多個測試用??
+      for (let i = 1; i <= 15; i++) {
+        const userId = userRepository.createUser(`pageuser${i}`, 'Test@123', 'user');
+        testUserIds.push(userId);
+      }
+
+      const result = userRepository.findUsersWithPagination(1, 10);
+
+      expect(result.list.length).toBeLessThanOrEqual(10);
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(10);
+      expect(result.total).toBeGreaterThanOrEqual(15);
+      expect(result.list[0]).not.toHaveProperty('password_hash');
+    });
+
+    test('?��??�詢?��?角色 - ?�該?��??�該角色?�戶', () => {
+      const adminId1 = userRepository.createUser('pageadmin1', 'Test@123', 'admin');
+      const adminId2 = userRepository.createUser('pageadmin2', 'Test@123', 'admin');
+      const userId = userRepository.createUser('pageuser', 'Test@123', 'user');
+      testUserIds.push(adminId1, adminId2, userId);
+
+      const result = userRepository.findUsersWithPagination(1, 10, 'admin');
+
+      expect(result.list.every(u => u.role === 'admin')).toBe(true);
+      expect(result.list.some(u => u.id === adminId1)).toBe(true);
+      expect(result.list.some(u => u.id === adminId2)).toBe(true);
+    });
+  });
+
+  describe('?��??�?�用?�測�?, () => {
+    test('?��??�?�用??- 不�?該�??��?�?, () => {
+      const userId1 = userRepository.createUser('alluser1', 'Test@123', 'user');
+      const userId2 = userRepository.createUser('alluser2', 'Test@123', 'admin');
+      testUserIds.push(userId1, userId2);
+
+      const users = userRepository.getAllUsersWithoutPassword();
+
+      expect(users.length).toBeGreaterThanOrEqual(2);
+      expect(users.every(u => !('password_hash' in u))).toBe(true);
+      expect(users.some(u => u.id === userId1)).toBe(true);
+      expect(users.some(u => u.id === userId2)).toBe(true);
+    });
+  });
+});

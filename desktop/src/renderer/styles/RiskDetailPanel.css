@@ -1,0 +1,44 @@
+/* 風險詳情面板樣式 */
+.risk-detail-panel {
+  padding: 8px 0;
+}
+
+.panel-section {
+  margin-bottom: 24px;
+}
+
+.panel-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+}
+
+.clause-number-large {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1890ff;
+  margin: 0;
+}
+
+.clause-content-box {
+  padding: 16px;
+  background-color: #fafafa;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #262626;
+}
+
+.panel-section .ant-alert {
+  border-radius: 6px;
+}
+
+.panel-section .ant-input-textarea {
+  border-radius: 6px;
+}
+
+.panel-section .ant-btn {
+  border-radius: 6px;
+}

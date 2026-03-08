@@ -1,0 +1,207 @@
+﻿node.exe : ts-jest[ts-jest-transformer] (WARN) Define `ts-jest` config under `globals` is deprecated. Please do
+位於 線路:1 字元:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\fortu\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ts-jest[ts-jest...ated. Please do:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+transform: {
+    <transform_regex>: ['ts-jest', { /* ts-jest config goes here in Jest */ }],
+},
+See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/presets#advanced
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedMod
+ules: true" in C:/Users/fortu/Desktop/Project/Demo/unit_tests/tsconfig.json instead, see https://www.typescriptlang.org
+/tsconfig/#isolatedModules
+  
+  console.error
+    Failed to create project: AppError: Project Name銝?箇征
+        at validationError (C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\middleware\errorHandler.ts:82:10)
+        at validateRequiredString (C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\utils\validation.ts:28:26)
+        at ProjectService.createProject (C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\ProjectService.ts:43:29)
+        at Object.<anonymous> (C:\Users\fortu\Desktop\Project\Demo\unit_tests\services\ProjectService.test.ts:83:43)
+        at Promise.then.completed (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\utils.js:298:28)
+        at new Promise (<anonymous>)
+        at callAsyncCircusFn (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\utils.js:231:10)
+        at _callCircusTest (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\run.js:316:40)
+        at _runTest (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\run.js:252:3)
+        at _runTestsForDescribeBlock (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\run.js:126:9)
+        at _runTestsForDescribeBlock (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\run.js:121:9)
+        at _runTestsForDescribeBlock (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\run.js:121:9)
+        at run (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\run.js:71:3)
+        at runAndTransformResultsToJestFormat (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+        at jestAdapter (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+        at runTestInternal (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-runner\build\runTest.js:367:16)
+        at runTest (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-runner\build\runTest.js:444:34) {
+      type: 'VALIDATION_ERROR',
+      details: undefined
+    }
+
+      62 |       };
+      63 |     } catch (error) {
+    > 64 |       console.error('Failed to create project:', error);
+         |               ^
+      65 |       
+      66 |       if (error instanceof Error && error.message) {
+      67 |         return {
+
+      at ProjectService.createProject (../desktop/src/main/services/ProjectService.ts:64:15)
+      at Object.<anonymous> (services/ProjectService.test.ts:83:43)
+
+  console.error
+    Failed to create project: AppError: User ID敹?憭扳 0
+        at validationError (C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\middleware\errorHandler.ts:82:10)
+        at validatePositiveInteger (C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\utils\validation.ts:119:26)
+        at ProjectService.createProject (C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\ProjectService.ts:45:30)
+        at Object.<anonymous> (C:\Users\fortu\Desktop\Project\Demo\unit_tests\services\ProjectService.test.ts:94:43)
+        at Promise.then.completed (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\utils.js:298:28)
+        at new Promise (<anonymous>)
+        at callAsyncCircusFn (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\utils.js:231:10)
+        at _callCircusTest (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\run.js:316:40)
+        at _runTest (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\run.js:252:3)
+        at _runTestsForDescribeBlock (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\run.js:126:9)
+        at _runTestsForDescribeBlock (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\run.js:121:9)
+        at run (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\run.js:71:3)
+        at runAndTransformResultsToJestFormat (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+        at jestAdapter (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+        at runTestInternal (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-runner\build\runTest.js:367:16)
+        at runTest (C:\Users\fortu\Desktop\Project\Demo\node_modules\jest-runner\build\runTest.js:444:34) {
+      type: 'VALIDATION_ERROR',
+      details: undefined
+    }
+
+      62 |       };
+      63 |     } catch (error) {
+    > 64 |       console.error('Failed to create project:', error);
+         |               ^
+      65 |       
+      66 |       if (error instanceof Error && error.message) {
+      67 |         return {
+
+      at ProjectService.createProject (../desktop/src/main/services/ProjectService.ts:64:15)
+      at Object.<anonymous> (services/ProjectService.test.ts:94:43)
+
+  console.error
+    No permission to access this project
+
+      89 |       // ????
+      90 |       if (!projectRepository.isOwnedByUser(projectId, userId)) {
+    > 91 |         console.error('No permission to access this project');
+         |                 ^
+      92 |         return null;
+      93 |       }
+      94 |
+
+      at ProjectService.getProject (../desktop/src/main/services/ProjectService.ts:91:17)
+      at Object.<anonymous> (services/ProjectService.test.ts:184:43)
+
+FAIL services/ProjectService.test.ts
+  ProjectService
+    ??should fail with invalid userId (3 ms)
+    createProject
+      ??should create project successfully (4 ms)
+      ??should fail with empty name (32 ms)
+  getUserProjects
+    ??should return user projects with pagination
+    ??should return empty array for user with no projects (1 ms)
+  getProject
+    ??should return project when user has permission (1 ms)
+    ? should return null when user has no permission (2 ms)
+  updateProject
+    ??should update project successfully (1 ms)
+    ??should update password separately
+    ? should fail when user has no permission
+  deleteProject
+    ??should delete project successfully (1 ms)
+    ? should fail when user has no permission
+  searchProjects
+    ??should search projects and paginate results (1 ms)
+    ??should handle pagination correctly
+  verifyProjectPassword
+    ??should verify password successfully (1 ms)
+    ??should fail with wrong password
+    ? should fail when user has no permission
+
+  ??getProject ??should return null when user has no permission
+
+    expect(jest.fn()).not.toHaveBeenCalled()
+
+    Expected number of calls: 0
+    Received number of calls: 1
+
+    1: 1
+
+      185 |
+      186 |       expect(result).toBeNull();
+    > 187 |       expect(projectRepository.findById).not.toHaveBeenCalled();
+          |                                              ^
+      188 |     });
+      189 |   });
+      190 |
+
+      at Object.<anonymous> (services/ProjectService.test.ts:187:46)
+
+  ??updateProject ??should fail when user has no permission
+
+    expect(jest.fn()).not.toHaveBeenCalled()
+
+    Expected number of calls: 0
+    Received number of calls: 2
+
+    1: 1, "Updated Name", "Updated Description"
+    2: 1, "Updated Name", undefined
+
+      231 |       expect(result.success).toBe(false);
+      232 |       expect(result.message).toContain('permission');
+    > 233 |       expect(projectRepository.updateProject).not.toHaveBeenCalled();
+          |                                                   ^
+      234 |     });
+      235 |   });
+      236 |
+
+      at Object.<anonymous> (services/ProjectService.test.ts:233:51)
+
+  ??deleteProject ??should fail when user has no permission
+
+    expect(jest.fn()).not.toHaveBeenCalled()
+
+    Expected number of calls: 0
+    Received number of calls: 1
+
+    1: 1
+
+      252 |
+      253 |       expect(result.success).toBe(false);
+    > 254 |       expect(projectRepository.softDelete).not.toHaveBeenCalled();
+          |                                                ^
+      255 |     });
+      256 |   });
+      257 |
+
+      at Object.<anonymous> (services/ProjectService.test.ts:254:48)
+
+  ??verifyProjectPassword ??should fail when user has no permission
+
+    expect(jest.fn()).not.toHaveBeenCalled()
+
+    Expected number of calls: 0
+    Received number of calls: 2
+
+    1: 1, "password"
+    2: 1, "wrongpassword"
+
+      339 |
+      340 |       expect(result.success).toBe(false);
+    > 341 |       expect(projectRepository.verifyPassword).not.toHaveBeenCalled();
+          |                                                    ^
+      342 |     });
+      343 |   });
+      344 | });
+
+      at Object.<anonymous> (services/ProjectService.test.ts:341:52)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 13 passed, 17 total
+Snapshots:   0 total
+Time:        0.558 s, estimated 1 s
+Ran all test suites matching /services\\ProjectService.test.ts/i.

@@ -1,0 +1,85 @@
+/* 文檔審閱頁面樣式 */
+.document-review-layout {
+  min-height: 100vh;
+}
+
+.risk-summary-sider {
+  background: #fff;
+  border-right: 1px solid #f0f0f0;
+  padding: 24px 16px;
+}
+
+.risk-summary-sider .ant-card {
+  border: none;
+  box-shadow: none;
+}
+
+.risk-summary-sider .ant-card-head {
+  padding: 0 0 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.risk-summary-sider .ant-card-body {
+  padding: 16px 0 0 0;
+}
+
+.risk-stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: #fafafa;
+  border-radius: 6px;
+}
+
+.risk-count {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.risk-stat-total {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #e6f7ff;
+  border-radius: 6px;
+  text-align: center;
+  color: #1890ff;
+}
+
+.document-review-content {
+  padding: 24px;
+  background-color: #f0f2f5;
+}
+
+.document-review-content .ant-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+/* 條款列表樣式 */
+.document-review-content .ant-list-item {
+  padding: 0;
+  border: none;
+  margin-bottom: 16px;
+}
+
+/* 響應式設計 */
+@media (max-width: 1024px) {
+  .risk-summary-sider {
+    width: 240px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .document-review-content {
+    padding: 16px;
+  }
+}

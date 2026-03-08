@@ -1,0 +1,59 @@
+/* 條款項目樣式 */
+.clause-item {
+  border-radius: 8px;
+  border: 2px solid #f0f0f0;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.clause-item:hover {
+  border-color: #1890ff;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+}
+
+.clause-item.risk-high {
+  border-left: 4px solid #ff4d4f;
+  background-color: #fff1f0;
+}
+
+.clause-item.risk-medium {
+  border-left: 4px solid #faad14;
+  background-color: #fffbe6;
+}
+
+.clause-item.risk-low {
+  border-left: 4px solid #1890ff;
+  background-color: #e6f7ff;
+}
+
+.clause-header {
+  margin-bottom: 12px;
+}
+
+.clause-number {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.clause-content {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #262626;
+  margin-bottom: 12px;
+}
+
+.clause-risk-hint {
+  padding: 8px 12px;
+  background-color: rgba(255, 77, 79, 0.1);
+  border-radius: 4px;
+  color: #ff4d4f;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clause-risk-hint .anticon {
+  font-size: 16px;
+}

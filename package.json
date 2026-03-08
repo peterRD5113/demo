@@ -1,0 +1,22 @@
+{
+  "name": "contract-risk-management",
+  "version": "1.0.0",
+  "description": "合同風險管理系統",
+  "main": "index.js",
+  "scripts": {
+    "test": "bash run_tests.sh",
+    "test:unit": "cd unit_tests && npx jest --config jest.config.js",
+    "test:api": "cd API_tests && npx jest --config jest.config.js",
+    "test:coverage": "cd unit_tests && npx jest --config jest.config.js --coverage",
+    "test:watch": "cd unit_tests && npx jest --config jest.config.js --watch"
+  },
+  "keywords": ["contract", "risk", "management"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.9.3"
+  }
+}

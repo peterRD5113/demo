@@ -1,0 +1,31 @@
+/* 設置頁面樣式 */
+.settings-layout {
+  min-height: 100vh;
+  background-color: #f0f2f5;
+}
+
+.settings-content {
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.settings-content .ant-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.settings-content .ant-form-item-label > label {
+  font-weight: 500;
+}
+
+.settings-content .ant-divider {
+  margin: 24px 0;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .settings-content {
+    padding: 16px;
+  }
+}

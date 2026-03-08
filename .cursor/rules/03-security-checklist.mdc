@@ -1,0 +1,167 @@
+---
+description: 安全鑑權要點 - 認證、授權、數據隔離
+alwaysApply: true
+---
+
+# 安全鑑權規範（優先級高於代碼風格）
+
+> ⚠️ 安全問題是驗收重點，缺失鑑權/越權/數據隔離屬「高」或「阻塞」級別缺陷
+
+## 認證（Authentication）
+
+### JWT Token 標準實現
+```python
+# ✅ 正確：Token 校驗中間件
+def verify_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+# ✅ Token 必須設過期時間
+token = jwt.encode({
+    "user_id": user.id,
+    "role": user.role,
+    "exp": datetime.utcnow() + timedelta(hours=24)  # 必須有 exp
+}, SECRET_KEY)
+```
+
+### 密碼處理
+```python
+# ✅ 正確：使用 bcrypt 加密
+from passlib.context import CryptContext
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
+
+# ❌ 禁止：明文存儲/比較密碼
+if user.password == input_password:  # 絕對禁止
+    ...
+```
+
+## 路由級鑑權（Authorization）
+
+### 所有受保護路由必須驗證 Token
+```python
+# FastAPI 示例
+from fastapi import Depends, Security
+from fastapi.security import HTTPBearer
+
+security = HTTPBearer()
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    return verify_token(token)  # 每個受保護路由必須依賴此函數
+
+# ✅ 受保護路由
+@router.get("/api/users", dependencies=[Depends(get_current_user)])
+async def get_users():
+    ...
+
+# ✅ 管理員專用路由
+@router.delete("/api/admin/users/{user_id}")
+async def delete_user(user_id: int, current_user = Depends(require_admin)):
+    ...
+```
+
+### 角色鑑權中間件
+```python
+def require_role(required_role: str):
+    def checker(current_user = Depends(get_current_user)):
+        if current_user["role"] != required_role:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        return current_user
+    return checker
+
+require_admin = require_role("admin")
+```
+
+## 對象級授權（防 IDOR 攻擊）
+
+> 用戶 A 不得訪問/修改用戶 B 的資源
+
+```python
+# ✅ 正確：必須校驗資源歸屬
+@router.get("/api/orders/{order_id}")
+async def get_order(order_id: int, current_user = Depends(get_current_user)):
+    order = await order_service.get_by_id(order_id)
+    
+    if not order:
+        raise HTTPException(status_code=404)
+    
+    # 關鍵：校驗資源是否屬於當前用戶（或管理員可訪問所有）
+    if order.user_id != current_user["user_id"] and current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return order
+
+# ❌ 禁止：只根據 ID 讀取，不校驗歸屬
+@router.get("/api/orders/{order_id}")
+async def get_order(order_id: int):
+    return await order_service.get_by_id(order_id)  # 任何人都能訪問任何訂單！
+```
+
+## 數據隔離（多用戶場景）
+
+```python
+# ✅ 正確：查詢時過濾用戶範圍
+async def get_user_orders(user_id: int, page: int, page_size: int):
+    # 所有查詢必須帶 user_id 過濾
+    return await db.query(Order).filter(
+        Order.user_id == user_id,  # 關鍵過濾條件
+        Order.deleted_at.is_(None)
+    ).offset((page-1)*page_size).limit(page_size).all()
+
+# ❌ 禁止：返回所有用戶的數據給普通用戶
+async def get_all_orders():  # 沒有按用戶過濾！
+    return await db.query(Order).all()
+```
+
+## SQL 注入防護
+
+```python
+# ✅ 正確：使用 ORM（SQLAlchemy / Prisma 等）
+users = await db.query(User).filter(User.email == email).first()
+
+# ✅ 正確：使用參數化查詢
+cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+
+# ❌ 絕對禁止：字符串拼接 SQL
+cursor.execute(f"SELECT * FROM users WHERE email = '{email}'")  # SQL注入漏洞
+```
+
+## 敏感信息保護
+
+```python
+# ✅ 正確：敏感字段不返回給前端
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    role: str
+    # ❌ 不包含 password_hash!
+
+# ✅ 正確：日志不打印敏感信息
+logger.info(f"User {user_id} logged in successfully")  # 只記錄ID
+# ❌ 禁止
+logger.info(f"Login attempt with password: {password}")  # 密碼進日志！
+logger.info(f"Token generated: {token}")  # Token 進日志！
+```
+
+## 管理/調試接口保護
+
+```python
+# ✅ 所有 /admin/* 路由必須有角色鑑權
+@router.get("/api/admin/users", dependencies=[Depends(require_admin)])
+
+# ✅ 所有 /debug/* 路由在生產環境應禁用
+if os.environ.get("DEBUG_MODE") != "true":
+    # 不暴露 debug 接口
+```

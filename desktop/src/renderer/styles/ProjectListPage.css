@@ -1,0 +1,124 @@
+/* 項目列表頁面樣式 */
+.project-list-layout {
+  min-height: 100vh;
+  background-color: #f0f2f5;
+}
+
+.project-list-content {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.project-list-content .ant-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.project-list-content .ant-card-head {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 24px;
+}
+
+.project-list-content .ant-card-head-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.project-list-content .ant-card-body {
+  padding: 24px;
+}
+
+/* 表格樣式 */
+.project-list-content .ant-table {
+  font-size: 14px;
+}
+
+.project-list-content .ant-table-thead > tr > th {
+  background-color: #fafafa;
+  font-weight: 600;
+  color: #262626;
+}
+
+.project-list-content .ant-table-tbody > tr:hover {
+  background-color: #f5f7fa;
+}
+
+.project-list-content .ant-table-cell {
+  padding: 16px;
+}
+
+/* 項目名稱鏈接 */
+.project-list-content .ant-table a {
+  color: #1890ff;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.project-list-content .ant-table a:hover {
+  color: #40a9ff;
+}
+
+/* 標籤樣式 */
+.project-list-content .ant-tag {
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+/* 操作按鈕 */
+.project-list-content .ant-btn-link {
+  padding: 4px 8px;
+  height: auto;
+}
+
+/* 模態框樣式 */
+.project-list-content .ant-modal-header {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 24px;
+}
+
+.project-list-content .ant-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.project-list-content .ant-modal-body {
+  padding: 24px;
+}
+
+.project-list-content .ant-form-item-label > label {
+  font-weight: 500;
+}
+
+/* 空狀態 */
+.project-list-content .ant-empty {
+  padding: 60px 0;
+}
+
+.project-list-content .ant-empty-description {
+  color: #999;
+  font-size: 14px;
+}
+
+/* 分頁樣式 */
+.project-list-content .ant-pagination {
+  margin-top: 24px;
+  text-align: right;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .project-list-content {
+    padding: 16px;
+  }
+
+  .project-list-content .ant-card-body {
+    padding: 16px;
+  }
+
+  .project-list-content .ant-table-cell {
+    padding: 12px 8px;
+  }
+}
