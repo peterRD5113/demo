@@ -46,9 +46,13 @@ function createWindow(): void {
     mainWindow.webContents.openDevTools();
   }
 
+  // Always open DevTools for debugging
+  mainWindow.webContents.openDevTools();
+
   // Add keyboard shortcut to toggle DevTools (F12 or Ctrl+Shift+I)
   mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.key === 'F12' || (input.control && input.shift && input.key === 'I')) {
+    console.log('Key pressed:', input.key, 'Control:', input.control, 'Shift:', input.shift);
+    if (input.key === 'F12' || input.key === 'F12' || (input.control && input.shift && (input.key === 'I' || input.key === 'i'))) {
       if (mainWindow) {
         if (mainWindow.webContents.isDevToolsOpened()) {
           mainWindow.webContents.closeDevTools();
