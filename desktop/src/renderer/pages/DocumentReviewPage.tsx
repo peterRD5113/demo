@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { Layout, Card, Spin, message, Typography, Divider, Empty, Tag, Button, Space } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -67,6 +67,7 @@ const DocumentReviewPage: React.FC = () => {
       const tokenPayload = JSON.parse(atob(token.split('.')[1]));
       const userId = tokenPayload.userId;
 
+      console.log('Loading document:', { documentId, userId });
       const response = await window.api.document.get(
         parseInt(documentId),
         userId
@@ -75,6 +76,7 @@ const DocumentReviewPage: React.FC = () => {
       if (response.success && response.data) {
         setDocument(response.data);
       } else {
+        console.error('Failed to load document:', response.message);
         message.error(response.message || '獲取文檔失敗');
       }
     } catch (error) {
@@ -347,3 +349,4 @@ const DocumentReviewPage: React.FC = () => {
 };
 
 export default DocumentReviewPage;
+
