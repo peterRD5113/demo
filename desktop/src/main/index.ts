@@ -26,11 +26,8 @@ function createWindow(): void {
   });
 
   // Load the index.html
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:5173');
-  } else {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
-  }
+  // Always load from dist in production build
+  mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
 
   // Open DevTools in development
   if (process.env.NODE_ENV === 'development') {
