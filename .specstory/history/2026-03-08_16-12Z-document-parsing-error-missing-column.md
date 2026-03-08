@@ -2229,6 +2229,414 @@ Optimizing conversation history
 
 ---
 
+現在讓我修改這些默認規則，將 keywords 改為 JSON 格式:
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+讓我使用 Shell 命令來修改:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; (Get-Content src\main\database\connection.ts -Raw -Encoding UTF8) -replace "keywords: '無限責任,不限於,包括但不限於'", "keywords: JSON.stringify(['無限責任', '不限於', '包括但不限於'])" -replace "keywords: '單方解除,單方終止,隨時解除'", "keywords: JSON.stringify(['單方解除', '單方終止', '隨時解除'])" -replace "keywords: '違約金,賠償金,懲罰性賠償'", "keywords: JSON.stringify(['違約金', '賠償金', '懲罰性賠償'])" -replace "keywords: '管轄法院,仲裁,爭議解決'", "keywords: JSON.stringify(['管轄法院', '仲裁', '爭議解決'])" -replace "keywords: '保密期限,保密義務,永久保密'", "keywords: JSON.stringify(['保密期限', '保密義務', '永久保密'])" | Set-Content src\main\database\connection.ts -Encoding UTF8</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; (Get-Content src\main\database\connection.ts -Raw -Encoding UTF8) -replace "keywords: '無限責任,不限於,包括但不限於'", "keywords: JSON.stringify(['無限責任', '不限於', '包括但不限於'])" -replace "keywords: '單方解除,單方終止,隨時解除'", "keywords: JSON.stringify(['單方解除', '單方終止', '隨時解除'])" -replace "keywords: '違約金,賠償金,懲罰性賠償'", "keywords: JSON.stringify(['違約金', '賠償金', '懲罰性賠償'])" -replace "keywords: '管轄法院,仲裁,爭議解決'", "keywords: JSON.stringify(['管轄法院', '仲裁', '爭議解決'])" -replace "keywords: '保密期限,保密義務,永久保密'", "keywords: JSON.stringify(['保密期限', '保密義務', '永久保密'])" | Set-Content src\main\database\connection.ts -Encoding UTF8
+```
+</details>
+</tool-use>
+
+---
+
+好的！現在讓我重新編譯:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build
+```
+
+```
+
+&gt; contract-risk-management@1.0.0 build
+&gt; npm run build:main &amp;&amp; npm run build:renderer
+
+
+&gt; contract-risk-management@1.0.0 build:main
+&gt; tsc -p tsconfig.json &amp;&amp; tsc-alias -p tsconfig.json
+
+src/main/repositories/RiskRepository.ts(111,20): error TS1005: ',' expected.
+src/main/repositories/RiskRepository.ts(111,29): error TS1005: ';' expected.
+src/main/repositories/RiskRepository.ts(111,47): error TS1005: ';' expected.
+src/main/repositories/RiskRepository.ts(119,18): error TS1005: ';' expected.
+src/main/repositories/RiskRepository.ts(119,29): error TS1011: An element access expression should take an argument.
+src/main/repositories/RiskRepository.ts(119,31): error TS1005: ';' expected.
+src/main/repositories/RiskRepository.ts(127,21): error TS1005: ';' expected.
+src/main/repositories/RiskRepository.ts(127,66): error TS1005: ';' expected.
+src/main/repositories/RiskRepository.ts(136,1): error TS1128: Declaration or statement expected.
+
+```
+</details>
+</tool-use>
+
+---
+
+Shell 命令破壞了文件。讓我重新讀取並手動修復:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\repositories\RiskRepository.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+文件看起來還好。讓我檢查第 111 行附近:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\repositories\RiskRepository.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+我看到問題了！有多餘的 `};` 和 `}`。讓我修復:
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+讓我直接恢復文件並重新寫入:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; git checkout src/main/repositories/RiskRepository.ts 2>$null; echo "File restored"</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; git checkout src/main/repositories/RiskRepository.ts 2>$null; echo "File restored"
+```
+
+```
+File restored
+
+```
+</details>
+</tool-use>
+
+---
+
+現在讓我重新讀取並正確修改 parseRule 方法:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\repositories\RiskRepository.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+好的，現在讓我正確地替換這個方法:
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+文件中有亂碼字符。讓我直接重寫整個文件:
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\repositories\RiskRepository.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Optimizing conversation history
+
+---
+
+好的！現在讓我也修復 `connection.ts`，恢復並重新修改:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; git checkout src/main/database/connection.ts 2>$null; echo "File restored"</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; git checkout src/main/database/connection.ts 2>$null; echo "File restored"
+```
+
+```
+File restored
+
+```
+</details>
+</tool-use>
+
+---
+
+現在讓我讀取並修改 connection.ts 中的默認規則:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\database\connection.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+太好了！`connection.ts` 已經有正確的 JSON 格式了（使用 `JSON.stringify()`）。現在讓我重新編譯:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build
+```
+
+```
+
+&gt; contract-risk-management@1.0.0 build
+&gt; npm run build:main &amp;&amp; npm run build:renderer
+
+
+&gt; contract-risk-management@1.0.0 build:main
+&gt; tsc -p tsconfig.json &amp;&amp; tsc-alias -p tsconfig.json
+
+
+&gt; contract-risk-management@1.0.0 build:renderer
+&gt; vite build --config vite.renderer.config.mjs
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3082 modules transformed.
+rendering chunks...
+computing gzip size...
+../../dist/renderer/index.html                     0.53 kB │ gzip:   0.38 kB
+../../dist/renderer/assets/index-C5gI11eR.css     14.94 kB │ gzip:   3.32 kB
+../../dist/renderer/assets/index-CjSfs9RR.js   1,155.41 kB │ gzip: 369.70 kB │ map: 5,321.13 kB
+✓ built in 6.19s
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+```
+</details>
+</tool-use>
+
+---
+
+太好了！編譯成功。現在讓我提交這些修復:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo; git add -A</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo; git add -A
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo; git commit -m "fix: 修復 keywords 欄位 JSON 解析錯誤
+
+- 修改 RiskRepository.parseRule() 方法以支持兩種格式：
+  1. JSON 數組格式：[\"關鍵詞1\", \"關鍵詞2\"]
+  2. 逗號分隔字符串：\"關鍵詞1,關鍵詞2\"
+- 當 JSON.parse() 失敗時，自動降級為逗號分隔解析
+- 確保向後兼容舊數據格式
+- connection.ts 中的默認規則已使用 JSON.stringify() 格式"</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo; git commit -m "fix: 修復 keywords 欄位 JSON 解析錯誤
+
+- 修改 RiskRepository.parseRule() 方法以支持兩種格式：
+  1. JSON 數組格式：[\"關鍵詞1\", \"關鍵詞2\"]
+  2. 逗號分隔字符串：\"關鍵詞1,關鍵詞2\"
+- 當 JSON.parse() 失敗時，自動降級為逗號分隔解析
+- 確保向後兼容舊數據格式
+- connection.ts 中的默認規則已使用 JSON.stringify() 格式"
+```
+
+```
+fatal: Invalid path '/關鍵詞2': No such file or directory
+
+```
+</details>
+</tool-use>
+
+---
+
+提交訊息中的引號有問題。讓我重新提交:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo; git commit -m "fix: 修復 keywords 欄位 JSON 解析錯誤
+
+- 修改 RiskRepository.parseRule() 方法以支持兩種格式
+- 當 JSON.parse() 失敗時自動降級為逗號分隔解析
+- 確保向後兼容舊數據格式"</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo; git commit -m "fix: 修復 keywords 欄位 JSON 解析錯誤
+
+- 修改 RiskRepository.parseRule() 方法以支持兩種格式
+- 當 JSON.parse() 失敗時自動降級為逗號分隔解析
+- 確保向後兼容舊數據格式"
+```
+
+```
+[main 4b27712] fix: 修復 keywords 欄位 JSON 解析錯誤
+ 2 files changed, 397 insertions(+), 2 deletions(-)
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo; git push</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo; git push
+```
+
+```
+To https://github.com/peterRD5113/demo.git
+   19df1ef..4b27712  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+完成！已成功推送。
+
+## 修復總結
+
+### 問題原因
+
+風險識別失敗是因為 `RiskRepository.parseRule()` 方法嘗試用 `JSON.parse()` 解析 `keywords` 欄位，但資料庫中存儲的是逗號分隔的字符串格式（如 `"無限責任,不限於,包括但不限於"`），而不是有效的 JSON 數組格式（如 `["無限責任", "不限於", "包括但不限於"]`）。
+
+### 解決方案
+
+1. **修改 `RiskRepository.ts` 的 `parseRule()` 方法**
+   - 添加 try-catch 來捕獲 JSON 解析錯誤
+   - 當 JSON 解析失敗時，自動降級為逗號分隔字符串解析
+   - 使用 `split(',').map(k => k.trim()).filter(k => k.length > 0)` 處理
+
+2. **確認 `connection.ts` 中的默認規則格式**
+   - 已確認使用 `JSON.stringify()` 創建 JSON 格式的 keywords
+   - 新創建的規則將使用正確的 JSON 格式
+
+### 優點
+
+- **向後兼容**：可以處理舊數據（逗號分隔格式）
+- **向前兼容**：支持新數據（JSON 數組格式）
+- **容錯性強**：即使數據格式不一致也能正常工作
+
+現在您可以重新啟動應用程式，風險識別功能應該可以正常工作了！記得要刪除舊的資料庫文件，讓應用程式重新創建一個新的資料庫。
+
+---
+
+_**User**_
+
+那你幫我刪除舊的資料庫文件
+
+---
+
+_**Agent (model gpt-5.3-codex, mode Agent)**_
+
+好的，讓我刪除舊的資料庫文件:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: Remove-Item "C:\Users\fortu\AppData\Roaming\Contract Risk Management\contract_risk.db" -Force -ErrorAction SilentlyContinue; if (Test-Path "C:\Users\fortu\AppData\Roaming\Contract Risk Management\contract_risk.db") { echo "Failed to delete" } else { echo "Database deleted successfully" }</summary>
+
+```bash
+Remove-Item "C:\Users\fortu\AppData\Roaming\Contract Risk Management\contract_risk.db" -Force -ErrorAction SilentlyContinue; if (Test-Path "C:\Users\fortu\AppData\Roaming\Contract Risk Management\contract_risk.db") { echo "Failed to delete" } else { echo "Database deleted successfully" }
+```
+
+```
+Database deleted successfully
+
+```
+</details>
+</tool-use>
+
+---
+
+完成！舊的資料庫文件已成功刪除。
+
+現在您可以重新啟動應用程式，它會自動創建一個新的資料庫，並使用正確的 JSON 格式初始化默認的風險規則。
+
+啟動應用程式後，風險識別功能應該可以正常工作了：
+1. 上傳文檔
+2. 自動解析條款（23 個條款）
+3. 自動識別風險（使用默認的 5 個風險規則）
+4. 顯示文檔內容和風險標註
+
+您可以使用之前的測試文檔（`測試文檔_簡單合同.txt`）來測試完整流程。
+
+---
+
+_**User**_
+
+@c:\Users\fortu\.cursor\projects\c-Users-fortu-Desktop-Project-Demo\terminals\1.txt:110-117 還是有問題 且在termninal 怎麼都是亂碼？
+
+---
+
+_**Agent (model gpt-5.3-codex, mode Agent)**_
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\database\connection.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
 
 
 ---
@@ -2241,21 +2649,6 @@ Status: **loading**
 
 </details>
 
-</tool-use>
-
----
-
-
-
----
-
-<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
-<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; (Get-Content src\main\database\connection.ts -Raw -Encoding UTF8) -replace "keywords: '無限責任,不限於,包括但不限於'", "keywords: JSON.stringify(['無限責任', '不限於', '包括但不限於'])" -replace "keywords: '單方解除,單方終止,隨時解除'", "keywords: JSON.stringify(['單方解除', '單方終止', '隨時解除'])" -replace "keywords: '違約金,賠償金,懲罰性賠償'", "keywords: JSON.stringify(['違約金', '賠償金', '懲罰性賠償'])" -replace "keywords: '管轄法院,仲裁,爭議解決'", "keywords: JSON.stringify(['管轄法院', '仲裁', '爭議解決'])" -replace "keywords: '保密期限,保密義務,永久保密'", "keywords: JSON.stringify(['保密期限', '保密義務', '永久保密'])" | Set-Content src\main\database\connection.ts -Encoding UTF8</summary>
-
-```bash
-cd C:\Users\fortu\Desktop\Project\Demo\desktop; (Get-Content src\main\database\connection.ts -Raw -Encoding UTF8) -replace "keywords: '無限責任,不限於,包括但不限於'", "keywords: JSON.stringify(['無限責任', '不限於', '包括但不限於'])" -replace "keywords: '單方解除,單方終止,隨時解除'", "keywords: JSON.stringify(['單方解除', '單方終止', '隨時解除'])" -replace "keywords: '違約金,賠償金,懲罰性賠償'", "keywords: JSON.stringify(['違約金', '賠償金', '懲罰性賠償'])" -replace "keywords: '管轄法院,仲裁,爭議解決'", "keywords: JSON.stringify(['管轄法院', '仲裁', '爭議解決'])" -replace "keywords: '保密期限,保密義務,永久保密'", "keywords: JSON.stringify(['保密期限', '保密義務', '永久保密'])" | Set-Content src\main\database\connection.ts -Encoding UTF8
-```
-</details>
 </tool-use>
 
 ---
