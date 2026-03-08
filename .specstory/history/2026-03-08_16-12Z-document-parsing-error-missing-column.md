@@ -5610,46 +5610,42 @@ Optimizing conversation history
 
 ---
 
+好的！我看到日誌了。雖然有很多 regex 錯誤（這是之前修復過的問題，但資料庫中的舊規則還在），但關鍵信息是：
 
+```
+文檔上傳成功 ID: 1
+文檔解析成功：23 個條款
+風險識別完成：找到 23 個風險
+```
+
+**文檔已經成功上傳並處理了！** 現在的問題是前端頁面無法顯示。
+
+從日誌中沒有看到我們添加的調試信息（`Loading document`, `Loading clauses`, `Loading risks`），這表示前端的 `DocumentReviewPage` 可能根本沒有被加載。
+
+讓我檢查路由配置，看看是否正確設置了文檔審閱頁面的路由：
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="glob_file_search">
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
 <details>
-<summary>Tool use: **glob_file_search**</summary>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **0** result in **1** directory</summary>
 
-
-Parameters:
-
-```json
-{
-  "targetDirectory": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\renderer",
-  "globPattern": "*Router*.tsx"
-}
-```
-Status: **loading**
-
+Directory: **C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer** (0 file)
 
 </details>
 </tool-use>
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="glob_file_search">
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
 <details>
-<summary>Tool use: **glob_file_search**</summary>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **1** result in **1** directory</summary>
 
+Directory: **C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer** (1 file)
 
-Parameters:
-
-```json
-{
-  "targetDirectory": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\renderer",
-  "globPattern": "App.tsx"
-}
-```
-Status: **loading**
-
+| File |
+|------|
+| `desktop/src/renderer/App.tsx` |
 
 </details>
 </tool-use>
@@ -5660,6 +5656,621 @@ Status: **loading**
 <details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\App.tsx</summary>
 
 </details>
+</tool-use>
+
+---
+
+路由配置看起來是正確的。路徑是 `/project/:projectId/document/:documentId`。
+
+問題可能是您點擊文檔時跳轉的 URL 不正確。讓我檢查 `DocumentListPage` 中的跳轉邏輯：
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "navigate.*document",
+  "path": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\renderer\\pages\\DocumentListPage.tsx",
+  "outputMode": "content",
+  "context": 5,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "navigate.*document",
+  "path": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\renderer\\pages\\DocumentListPage.tsx",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 1,
+  "topFiles": [
+    {
+      "uri": "desktop\\src\\renderer\\pages\\DocumentListPage.tsx",
+      "matchCount": 11
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+讓我直接讀取文件查看跳轉邏輯：
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "onClick.*document",
+  "path": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\renderer\\pages\\DocumentListPage.tsx",
+  "outputMode": "content",
+  "context": 3,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "onClick.*document",
+  "path": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\renderer\\pages\\DocumentListPage.tsx",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+讓我搜索 "查看" 或 "view" 按鈕：
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "handleView|查看|View",
+  "path": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\renderer\\pages\\DocumentListPage.tsx",
+  "outputMode": "content",
+  "context": 5,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "handleView|查看|View",
+  "path": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\renderer\\pages\\DocumentListPage.tsx",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 4,
+  "topFiles": [
+    {
+      "uri": "desktop\\src\\renderer\\pages\\DocumentListPage.tsx",
+      "matchCount": 35
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+讓我直接讀取文件的一部分：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\pages\DocumentListPage.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+讓我繼續查看處理查看文檔的部分：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\pages\DocumentListPage.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+找到了！`handleViewDocument` 函數的跳轉路徑是正確的：
+
+```typescript
+navigate(`/project/${projectId}/document/${document.id}`);
+```
+
+這與路由配置匹配。現在問題可能是：當您點擊"查看"按鈕時，頁面跳轉了，但 `DocumentReviewPage` 沒有正確加載或顯示調試信息。
+
+讓我在 `DocumentReviewPage` 的最開始添加一個日誌，看看組件是否被加載：
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\pages\DocumentReviewPage.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+好的！現在讓我重新編譯：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build
+```
+
+```
+
+&gt; contract-risk-management@1.0.0 build
+&gt; npm run build:main &amp;&amp; npm run build:renderer
+
+
+&gt; contract-risk-management@1.0.0 build:main
+&gt; tsc -p tsconfig.json &amp;&amp; tsc-alias -p tsconfig.json
+
+
+&gt; contract-risk-management@1.0.0 build:renderer
+&gt; vite build --config vite.renderer.config.mjs
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3082 modules transformed.
+rendering chunks...
+computing gzip size...
+../../dist/renderer/index.html                     0.53 kB │ gzip:   0.38 kB
+../../dist/renderer/assets/index-C5gI11eR.css     14.94 kB │ gzip:   3.32 kB
+../../dist/renderer/assets/index-DOZbdZ-5.js   1,155.96 kB │ gzip: 369.99 kB │ map: 5,323.11 kB
+✓ built in 5.86s
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+```
+</details>
+</tool-use>
+
+---
+
+編譯成功！讓我提交並推送：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "debug: 添加 DocumentReviewPage 組件加載日誌
+
+- 在組件掛載時記錄日誌
+- 記錄路由參數 (projectId, documentId)
+- 記錄 token 是否可用
+- 幫助診斷頁面是否正確加載"; git push</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "debug: 添加 DocumentReviewPage 組件加載日誌
+
+- 在組件掛載時記錄日誌
+- 記錄路由參數 (projectId, documentId)
+- 記錄 token 是否可用
+- 幫助診斷頁面是否正確加載"; git push
+```
+
+```
+[main 95a3ecb] debug: 添加 DocumentReviewPage 組件加載日誌
+ 2 files changed, 871 insertions(+), 1 deletion(-)
+To https://github.com/peterRD5113/demo.git
+   56cb0db..95a3ecb  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+完成！現在請您：
+
+## 下一步操作
+
+1. **完全關閉應用程式**
+2. **重新啟動應用程式**（開發者工具會自動打開）
+3. **切換到 Console 標籤**
+4. **點擊文檔的"查看"按鈕**
+
+## 預期看到的日誌
+
+當您點擊"查看"按鈕後，控制台應該會顯示：
+
+```
+DocumentReviewPage mounted
+Route params: { projectId: "1", documentId: "1" }
+Token available: true
+Loading document: { documentId: "1", userId: 1 }
+Document response: {...}
+Loading clauses for documentId: 1
+Clauses response: {...}
+Loading risks for documentId: 1
+Risk list response: {...}
+```
+
+如果沒有看到 `DocumentReviewPage mounted`，說明組件根本沒有被加載，可能是路由問題。
+
+如果看到了 `DocumentReviewPage mounted` 但沒有後續的 `Loading document` 等日誌，說明 `useEffect` 沒有執行。
+
+請將控制台的完整輸出（特別是點擊"查看"按鈕後的輸出）截圖或複製給我！
+
+---
+
+_**User**_
+
+幫我完全結速進程
+
+---
+
+_**Agent (model gpt-5.3-codex, mode Agent)**_
+
+好的！讓我幫您完全結束應用程式進程：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: Get-Process | Where-Object { $_.ProcessName -like "*electron*" -or $_.ProcessName -like "*Contract*" -or $_.MainWindowTitle -like "*Contract*" } | ForEach-Object { Stop-Process -Id $_.Id -Force; Write-Host "Killed process: $($_.ProcessName) (PID: $($_.Id))" }</summary>
+
+```bash
+Get-Process | Where-Object { $_.ProcessName -like "*electron*" -or $_.ProcessName -like "*Contract*" -or $_.MainWindowTitle -like "*Contract*" } | ForEach-Object { Stop-Process -Id $_.Id -Force; Write-Host "Killed process: $($_.ProcessName) (PID: $($_.Id))" }
+```
+</details>
+</tool-use>
+
+---
+
+讓我再檢查一次是否還有殘留進程：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: Get-Process | Where-Object { $_.ProcessName -match "electron|Contract" } | Select-Object ProcessName, Id, MainWindowTitle | Format-Table -AutoSize</summary>
+
+```bash
+Get-Process | Where-Object { $_.ProcessName -match "electron|Contract" } | Select-Object ProcessName, Id, MainWindowTitle | Format-Table -AutoSize
+```
+</details>
+</tool-use>
+
+---
+
+好的！所有進程都已經結束了。現在您可以：
+
+## 下一步
+
+1. **重新啟動應用程式**
+   - 雙擊應用程式圖標
+   - 或者在終端運行：`npm start`（如果是開發模式）
+
+2. **開發者工具會自動打開**（在窗口右側或底部）
+
+3. **切換到 Console 標籤**
+
+4. **登入並上傳/查看文檔**
+
+5. **將控制台輸出複製給我**
+
+現在應用程式已經完全關閉，重新啟動後會加載最新的代碼，包括所有的調試日誌。
+
+---
+
+_**User**_
+
+DocumentReviewPage.tsx:86 加載文檔失敗: TypeError: Cannot read properties of undefined (reading 'document')
+    at x (DocumentReviewPage.tsx:74:41)
+    at DocumentReviewPage.tsx:60:7
+    at Uu (react-dom-client.production.js:8583:24)
+    at H3 (react-dom-client.production.js:10126:23)
+    at uo (react-dom-client.production.js:10101:7)
+    at H3 (react-dom-client.production.js:10120:7)
+    at uo (react-dom-client.production.js:10101:7)
+    at H3 (react-dom-client.production.js:10241:7)
+    at uo (react-dom-client.production.js:10101:7)
+    at H3 (react-dom-client.production.js:10120:7)
+x @ DocumentReviewPage.tsx:86
+(anonymous) @ DocumentReviewPage.tsx:60
+Uu @ react-dom-client.production.js:8583
+H3 @ react-dom-client.production.js:10126
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10137
+oN @ react-dom-client.production.js:11763
+gp @ react-dom-client.production.js:11739
+p$ @ react-dom-client.production.js:12085
+qu @ react-dom-client.production.js:11956
+nN @ react-dom-client.production.js:11726
+f$ @ react-dom-client.production.js:11521
+u$ @ react-dom-client.production.js:10920
+q3 @ react-dom-client.production.js:10826
+sN @ react-dom-client.production.js:12078
+N @ scheduler.production.js:151
+Show 58 more frames
+Show less
+DocumentReviewPage.tsx:100 Loading clauses for documentId: 1
+DocumentReviewPage.tsx:116 加載條款失敗: TypeError: Cannot read properties of undefined (reading 'clause')
+    at C (DocumentReviewPage.tsx:101:41)
+    at DocumentReviewPage.tsx:61:7
+    at Uu (react-dom-client.production.js:8583:24)
+    at H3 (react-dom-client.production.js:10126:23)
+    at uo (react-dom-client.production.js:10101:7)
+    at H3 (react-dom-client.production.js:10120:7)
+    at uo (react-dom-client.production.js:10101:7)
+    at H3 (react-dom-client.production.js:10241:7)
+    at uo (react-dom-client.production.js:10101:7)
+    at H3 (react-dom-client.production.js:10120:7)
+C @ DocumentReviewPage.tsx:116
+(anonymous) @ DocumentReviewPage.tsx:61
+Uu @ react-dom-client.production.js:8583
+H3 @ react-dom-client.production.js:10126
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10137
+oN @ react-dom-client.production.js:11763
+gp @ react-dom-client.production.js:11739
+p$ @ react-dom-client.production.js:12085
+qu @ react-dom-client.production.js:11956
+nN @ react-dom-client.production.js:11726
+f$ @ react-dom-client.production.js:11521
+u$ @ react-dom-client.production.js:10920
+q3 @ react-dom-client.production.js:10826
+sN @ react-dom-client.production.js:12078
+N @ scheduler.production.js:151
+Show 58 more frames
+Show less
+DocumentReviewPage.tsx:127 Loading risks for documentId: 1
+DocumentReviewPage.tsx:155 加載風險失敗: TypeError: Cannot read properties of undefined (reading 'risk')
+    at E (DocumentReviewPage.tsx:129:41)
+    at DocumentReviewPage.tsx:62:7
+    at Uu (react-dom-client.production.js:8583:24)
+    at H3 (react-dom-client.production.js:10126:23)
+    at uo (react-dom-client.production.js:10101:7)
+    at H3 (react-dom-client.production.js:10120:7)
+    at uo (react-dom-client.production.js:10101:7)
+    at H3 (react-dom-client.production.js:10241:7)
+    at uo (react-dom-client.production.js:10101:7)
+    at H3 (react-dom-client.production.js:10120:7)
+E @ DocumentReviewPage.tsx:155
+(anonymous) @ DocumentReviewPage.tsx:62
+Uu @ react-dom-client.production.js:8583
+H3 @ react-dom-client.production.js:10126
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10120
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10241
+uo @ react-dom-client.production.js:10101
+H3 @ react-dom-client.production.js:10137
+oN @ react-dom-client.production.js:11763
+gp @ react-dom-client.production.js:11739
+p$ @ react-dom-client.production.js:12085
+qu @ react-dom-client.production.js:11956
+nN @ react-dom-client.production.js:11726
+f$ @ react-dom-client.production.js:11521
+u$ @ react-dom-client.production.js:10920
+q3 @ react-dom-client.production.js:10826
+sN @ react-dom-client.production.js:12078
+N @ scheduler.production.js:151
+Show 58 more frames
+Show less
+
+
+---
+
+_**Agent (model gpt-5.3-codex, mode Agent)**_
+
+太好了！找到問題了！錯誤信息很清楚：
+
+```
+Cannot read properties of undefined (reading 'document')
+Cannot read properties of undefined (reading 'clause')
+Cannot read properties of undefined (reading 'risk')
+```
+
+問題是 `window.api` 未定義！應該是 `window.api.document.get`，但實際上應該是 `window.electronAPI.document.get`。
+
+讓我檢查並修復：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\pages\DocumentReviewPage.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+找到了！應該是 `window.electronAPI` 而不是 `window.api`。讓我修復所有的 API 調用：
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\pages\DocumentReviewPage.tsx</summary>
+
+</details>
+
 </tool-use>
 
 ---

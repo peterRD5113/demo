@@ -71,7 +71,7 @@ const DocumentReviewPage: React.FC = () => {
       const userId = tokenPayload.userId;
 
       console.log('Loading document:', { documentId, userId });
-      const response = await window.api.document.get(
+      const response = await window.electronAPI.document.get(
         parseInt(documentId),
         userId
       );
@@ -98,7 +98,7 @@ const DocumentReviewPage: React.FC = () => {
       const userId = tokenPayload.userId;
 
       console.log('Loading clauses for documentId:', documentId);
-      const response = await window.api.clause.getByDocument(
+      const response = await window.electronAPI.clause.getByDocument(
         parseInt(documentId),
         userId,
         1,
@@ -126,7 +126,7 @@ const DocumentReviewPage: React.FC = () => {
 
       console.log('Loading risks for documentId:', documentId);
 
-      const response = await window.api.risk.list(
+      const response = await window.electronAPI.risk.list(
         parseInt(documentId),  // 使用 documentId 而不是 projectId
         userId,
         1,
