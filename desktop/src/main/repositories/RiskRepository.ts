@@ -81,12 +81,26 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
   }
 
   /**
-   * ?????? JSON ????????
+   * ?????? JSON ????????????????
    */
   private parseRule(rule: RiskRule): RiskRule {
+    let keywords: string[];
+    
+    if (typeof rule.keywords === 'string') {
+      // ????? JSON
+      try {
+        keywords = JSON.parse(rule.keywords);
+      } catch (e) {
+        // ???? JSON???????
+        keywords = rule.keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
+      }
+    } else {
+      keywords = rule.keywords;
+    }
+    
     return {
       ...rule,
-      keywords: typeof rule.keywords === 'string' ? JSON.parse(rule.keywords) : rule.keywords,
+      keywords
     };
   }
 
