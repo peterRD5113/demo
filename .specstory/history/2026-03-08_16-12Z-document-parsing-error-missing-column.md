@@ -3407,3 +3407,240 @@ _**Agent (model gpt-5.3-codex, mode Agent)**_
 
 ---
 
+_**User**_
+
+你看圖還是沒有內容
+
+---
+
+_**Agent (model gpt-5.3-codex, mode Agent)**_
+
+我看到了！頁面顯示空白，只有一個文檔圖標和 "?????" 的文字。這表示文檔審閱頁面沒有正確加載數據。
+
+讓我檢查 `DocumentReviewPage.tsx` 的數據加載邏輯：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\pages\DocumentReviewPage.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+我看到問題了！代碼中有很多 "??????" 的亂碼，這些應該是中文錯誤訊息。讓我繼續查看 loadRisks 方法：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\pages\DocumentReviewPage.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+問題找到了！在 `loadRisks` 方法中，它使用 `projectId` 來獲取風險列表：
+
+```typescript
+const response = await window.api.risk.list(
+  parseInt(projectId),  // 使用 projectId
+  userId,
+  1,
+  100
+);
+```
+
+但根據我們之前的修復，`window.api.risk.list` 實際上應該傳入 `documentId`，因為後端的 `riskService.getDocumentRisks()` 需要的是 `documentId`。
+
+讓我檢查 preload 中的 API 定義：
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "risk.*list",
+  "path": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\preload",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "risk.*list",
+  "path": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\preload",
+  "outputMode": "content",
+  "totalFiles": 2,
+  "totalMatches": 3,
+  "topFiles": [
+    {
+      "uri": "desktop/src/preload/ipc/channels.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "desktop/src/preload/index.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+讓我直接修復 `DocumentReviewPage.tsx` 中的 `loadRisks` 方法，將 `projectId` 改為 `documentId`：
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\pages\DocumentReviewPage.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+好的！現在讓我重新編譯:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build
+```
+
+```
+
+&gt; contract-risk-management@1.0.0 build
+&gt; npm run build:main &amp;&amp; npm run build:renderer
+
+
+&gt; contract-risk-management@1.0.0 build:main
+&gt; tsc -p tsconfig.json &amp;&amp; tsc-alias -p tsconfig.json
+
+
+&gt; contract-risk-management@1.0.0 build:renderer
+&gt; vite build --config vite.renderer.config.mjs
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3082 modules transformed.
+rendering chunks...
+computing gzip size...
+../../dist/renderer/index.html                     0.53 kB │ gzip:   0.38 kB
+../../dist/renderer/assets/index-C5gI11eR.css     14.94 kB │ gzip:   3.32 kB
+../../dist/renderer/assets/index-DOScCS1U.js   1,155.40 kB │ gzip: 369.71 kB │ map: 5,321.14 kB
+✓ built in 6.77s
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+```
+</details>
+</tool-use>
+
+---
+
+編譯成功！現在讓我提交並推送:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "fix: 修復文檔審閱頁面無法加載風險數據的問題
+
+- 將 loadRisks 方法中的 projectId 改為 documentId
+- 後端 API 需要的是 documentId 而不是 projectId
+- 修復中文亂碼註釋"; git push</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "fix: 修復文檔審閱頁面無法加載風險數據的問題
+
+- 將 loadRisks 方法中的 projectId 改為 documentId
+- 後端 API 需要的是 documentId 而不是 projectId
+- 修復中文亂碼註釋"; git push
+```
+
+```
+[main b12c267] fix: 修復文檔審閱頁面無法加載風險數據的問題
+ 2 files changed, 230 insertions(+), 4 deletions(-)
+warning: in the working copy of 'desktop/src/renderer/pages/DocumentReviewPage.tsx', LF will be replaced by CRLF the next time Git touches it
+To https://github.com/peterRD5113/demo.git
+   9e37e7c..b12c267  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+完成！已成功推送。
+
+## 問題原因
+
+文檔審閱頁面無法顯示內容是因為 `loadRisks()` 方法使用了錯誤的參數：
+- **錯誤**：使用 `projectId` 調用 `window.api.risk.list()`
+- **正確**：應該使用 `documentId`
+
+因為後端的 `riskService.getDocumentRisks()` 需要的是 `documentId`，而不是 `projectId`。
+
+## 修復內容
+
+將 `DocumentReviewPage.tsx` 中的：
+```typescript
+const response = await window.api.risk.list(
+  parseInt(projectId),  // ❌ 錯誤
+  userId,
+  1,
+  100
+);
+```
+
+改為：
+```typescript
+const response = await window.api.risk.list(
+  parseInt(documentId),  // ✅ 正確
+  userId,
+  1,
+  100
+);
+```
+
+---
+
+現在請重新啟動應用程式，文檔審閱頁面應該可以正確顯示：
+1. 文檔信息
+2. 23 個條款
+3. 7 個風險標註
+
+所有功能應該都能正常工作了！
+
+---
+
+_**User**_
+
+@c:\Users\fortu\.cursor\projects\c-Users-fortu-Desktop-Project-Demo\terminals\1.txt:584-589 還是沒有出現內容 一樣是會跳出多個????的警示窗你是不是可以把????看是不是讓他顯示出來？
+
+
+---
+
