@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { Layout, Card, Spin, message, Typography, Divider, Empty, Tag, Button, Space } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -75,11 +75,11 @@ const DocumentReviewPage: React.FC = () => {
       if (response.success && response.data) {
         setDocument(response.data);
       } else {
-        message.error(response.message || '??????');
+        message.error(response.message || '獲取文檔失敗');
       }
     } catch (error) {
-      console.error('??????:', error);
-      message.error('??????');
+      console.error('加載文檔失敗:', error);
+      message.error('加載文檔失敗');
     } finally {
       setLoading(false);
     }
@@ -100,11 +100,15 @@ const DocumentReviewPage: React.FC = () => {
         100
       );
 
+      console.log('Clauses response:', response);
+
       if (response.success && response.data) {
-        setClauses(response.data.items || []);
+        const clausesList = response.data.items || [];
+        console.log('Loaded clauses:', clausesList.length, clausesList);
+        setClauses(clausesList);
       }
     } catch (error) {
-      console.error('??????:', error);
+      console.error('加載條款失敗:', error);
     }
   };
 
@@ -115,6 +119,8 @@ const DocumentReviewPage: React.FC = () => {
       const tokenPayload = JSON.parse(atob(token.split('.')[1]));
       const userId = tokenPayload.userId;
 
+      console.log('Loading risks for documentId:', documentId);
+
       const response = await window.api.risk.list(
         parseInt(documentId),  // 使用 documentId 而不是 projectId
         userId,
@@ -122,8 +128,11 @@ const DocumentReviewPage: React.FC = () => {
         100
       );
 
+      console.log('Risk list response:', response);
+
       if (response.success && response.data) {
         const allRisks = response.data.items || [];
+        console.log('Loaded risks:', allRisks.length, allRisks);
         setRisks(allRisks);
 
         // 按條款ID分組風險
@@ -135,6 +144,7 @@ const DocumentReviewPage: React.FC = () => {
           riskMap.get(risk.clause_id)!.push(risk);
         });
         setRisksByClause(riskMap);
+        console.log('Risk map:', riskMap);
       }
     } catch (error) {
       console.error('加載風險失敗:', error);
@@ -142,7 +152,7 @@ const DocumentReviewPage: React.FC = () => {
   };
 
   const handleClauseUpdate = () => {
-    // ????????
+    // 重新加載條款
     loadClauses();
   };
 
@@ -168,7 +178,7 @@ const DocumentReviewPage: React.FC = () => {
     const clauseRisks = risksByClause.get(clauseId);
     if (!clauseRisks || clauseRisks.length === 0) return null;
 
-    // ????????
+    // 返回最高風險等級
     if (clauseRisks.some(r => r.risk_level === 'high')) return 'high';
     if (clauseRisks.some(r => r.risk_level === 'medium')) return 'medium';
     return 'low';
@@ -178,7 +188,7 @@ const DocumentReviewPage: React.FC = () => {
     const clauseRisks = risksByClause.get(clauseId);
     if (!clauseRisks || clauseRisks.length === 0) return null;
 
-    // ??????????
+    // 返回第一個風險的描述
     return clauseRisks[0].description;
   };
 
@@ -189,7 +199,7 @@ const DocumentReviewPage: React.FC = () => {
         <Content className="document-review-content">
           <div style={{ textAlign: 'center', padding: '100px 0' }}>
             <Spin size="large" />
-            <p style={{ marginTop: 20 }}>???...</p>
+            <p style={{ marginTop: 20 }}>加載中...</p>
           </div>
         </Content>
       </Layout>
@@ -202,14 +212,14 @@ const DocumentReviewPage: React.FC = () => {
         <AppHeader />
         <Content className="document-review-content">
           <Card>
-            <Empty description="?????" />
+            <Empty description="文檔不存在" />
           </Card>
         </Content>
       </Layout>
     );
   }
 
-  // ??????
+  // 統計風險
   const highRiskCount = risks.filter(r => r.risk_level === 'high').length;
   const mediumRiskCount = risks.filter(r => r.risk_level === 'medium').length;
   const lowRiskCount = risks.filter(r => r.risk_level === 'low').length;
@@ -234,39 +244,39 @@ const DocumentReviewPage: React.FC = () => {
                 icon={<DownloadOutlined />}
                 onClick={handleExport}
               >
-                ??
+                導出
               </Button>
               <Button
                 type="primary"
                 icon={<HistoryOutlined />}
                 onClick={handleVersionManagement}
               >
-                ????
+                版本管理
               </Button>
             </Space>
           </div>
           
           <div style={{ marginBottom: 24 }}>
-            <Text strong>??: </Text>
+            <Text strong>狀態: </Text>
             <Text>{document.status}</Text>
             <Divider type="vertical" />
-            <Text strong>??: </Text>
+            <Text strong>類型: </Text>
             <Text>{document.file_type}</Text>
             <Divider type="vertical" />
-            <Text strong>????: </Text>
+            <Text strong>上傳時間: </Text>
             <Text>{new Date(document.created_at).toLocaleString()}</Text>
           </div>
 
-          {/* ???? */}
+          {/* 風險統計 */}
           {risks.length > 0 && (
             <div style={{ marginBottom: 24, padding: '16px', backgroundColor: '#fafafa', borderRadius: '4px' }}>
               <Text strong style={{ marginRight: 16 }}>
-                <WarningOutlined /> ????:
+                <WarningOutlined /> 風險統計:
               </Text>
-              <Tag color="red">???: {highRiskCount}</Tag>
-              <Tag color="orange">???: {mediumRiskCount}</Tag>
-              <Tag color="blue">???: {lowRiskCount}</Tag>
-              <Tag>??: {risks.length}</Tag>
+              <Tag color="red">高風險: {highRiskCount}</Tag>
+              <Tag color="orange">中風險: {mediumRiskCount}</Tag>
+              <Tag color="blue">低風險: {lowRiskCount}</Tag>
+              <Tag>總計: {risks.length}</Tag>
             </div>
           )}
 
@@ -274,17 +284,17 @@ const DocumentReviewPage: React.FC = () => {
 
           <div className="clauses-section">
             <Title level={4}>
-              ???? ({clauses.length} ???)
+              合同條款 ({clauses.length} 條)
               {risks.length > 0 && (
                 <Text type="secondary" style={{ fontSize: '14px', fontWeight: 'normal', marginLeft: '16px' }}>
-                  <CheckCircleOutlined /> ???????
+                  <CheckCircleOutlined /> 已完成風險識別
                 </Text>
               )}
             </Title>
             
             {clauses.length === 0 ? (
               <Empty 
-                description="???????????????" 
+                description="暫無條款數據，請先解析文檔" 
                 style={{ marginTop: 40 }}
               />
             ) : (
@@ -314,7 +324,7 @@ const DocumentReviewPage: React.FC = () => {
         </Card>
       </Content>
 
-      {/* ???? */}
+      {/* 註解面板 */}
       {selectedClauseId && (
         <AnnotationPanel
           clauseId={selectedClauseId}
@@ -323,7 +333,7 @@ const DocumentReviewPage: React.FC = () => {
         />
       )}
 
-      {/* ????? */}
+      {/* 導出模態框 */}
       {document && (
         <ExportModal
           visible={showExportModal}
@@ -337,4 +347,3 @@ const DocumentReviewPage: React.FC = () => {
 };
 
 export default DocumentReviewPage;
-
