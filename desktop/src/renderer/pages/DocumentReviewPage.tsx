@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { Layout, Card, Spin, message, Typography, Divider, Empty, Tag, Button, Space } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -40,8 +40,11 @@ interface Risk {
 }
 
 const DocumentReviewPage: React.FC = () => {
+  console.log('DocumentReviewPage mounted');
   const { projectId, documentId } = useParams<{ projectId: string; documentId: string }>();
+  console.log('Route params:', { projectId, documentId });
   const { token } = useAuth();
+  console.log('Token available:', !!token);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [document, setDocument] = useState<Document | null>(null);
