@@ -7,7 +7,6 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import { initDatabase } from './database/connection';
-import { registerIPCHandlers } from './ipc';
 
 // Keep a global reference of the window object
 let mainWindow: BrowserWindow | null = null;
@@ -48,11 +47,12 @@ function createWindow(): void {
  */
 async function initialize(): Promise<void> {
   try {
-    // Initialize database
+    // Initialize database first
     await initDatabase();
     console.log('Database initialized successfully');
 
-    // Register IPC handlers
+    // Dynamically import and register IPC handlers after database is ready
+    const { registerIPCHandlers } = await import('./ipc');
     registerIPCHandlers();
     console.log('IPC handlers registered successfully');
 

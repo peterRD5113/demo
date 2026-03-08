@@ -1,6 +1,6 @@
 /**
- * IPC 處理器主文件
- * 註冊所有 IPC 通道的處理函數
+ * IPC Handler Registration
+ * Register all IPC channel handlers
  */
 
 import { ipcMain } from 'electron';
@@ -12,37 +12,37 @@ import { fileHandlers } from './handlers/fileHandlers';
 import { systemHandlers } from './handlers/systemHandlers';
 
 /**
- * 註冊所有 IPC 處理器
+ * Register all IPC handlers
  */
 export function registerIPCHandlers(): void {
-  console.log('註冊 IPC 處理器...');
+  console.log('Registering IPC handlers...');
 
-  // 註冊認證相關處理器
+  // Register authentication handlers
   authHandlers.register(ipcMain);
 
-  // 註冊項目相關處理器
+  // Register project handlers
   projectHandlers.register(ipcMain);
 
-  // 註冊文檔相關處理器
+  // Register document handlers
   documentHandlers.register(ipcMain);
 
-  // 註冊風險相關處理器
+  // Register risk handlers
   riskHandlers.register(ipcMain);
 
-  // 註冊文件操作處理器
+  // Register file operation handlers
   fileHandlers.register(ipcMain);
 
-  // 註冊系統相關處理器
+  // Register system handlers
   systemHandlers.register(ipcMain);
 
-  console.log('IPC 處理器註冊完成');
+  console.log('IPC handlers registered successfully');
 }
 
 /**
- * 移除所有 IPC 處理器
+ * Unregister all IPC handlers
  */
 export function unregisterIPCHandlers(): void {
-  console.log('移除 IPC 處理器...');
+  console.log('Unregistering IPC handlers...');
   ipcMain.removeAllListeners();
-  console.log('IPC 處理器移除完成');
+  console.log('IPC handlers unregistered successfully');
 }
