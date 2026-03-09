@@ -36,23 +36,16 @@ function createWindow(): void {
   mainWindow.loadFile(htmlPath)
     .then(() => {
       console.log('✅ HTML loaded successfully');
+      // Open DevTools after page loads
+      mainWindow?.webContents.openDevTools();
     })
     .catch((error) => {
       console.error('❌ Failed to load HTML:', error);
     });
 
-  // Open DevTools in development
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.webContents.openDevTools();
-  }
-
-  // Always open DevTools for debugging
-  mainWindow.webContents.openDevTools();
-
   // Add keyboard shortcut to toggle DevTools (F12 or Ctrl+Shift+I)
   mainWindow.webContents.on('before-input-event', (event, input) => {
-    console.log('Key pressed:', input.key, 'Control:', input.control, 'Shift:', input.shift);
-    if (input.key === 'F12' || input.key === 'F12' || (input.control && input.shift && (input.key === 'I' || input.key === 'i'))) {
+    if (input.key === 'F12' || (input.control && input.shift && (input.key === 'I' || input.key === 'i'))) {
       if (mainWindow) {
         if (mainWindow.webContents.isDevToolsOpened()) {
           mainWindow.webContents.closeDevTools();
