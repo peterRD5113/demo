@@ -8446,3 +8446,271 @@ _**Agent (model gpt-5.3-codex, mode Agent)**_
 
 ---
 
+Optimizing conversation history
+
+---
+
+現在讓我用正確的中文重寫整個文件：
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\database\connection.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+完成！現在讓我編譯並提交：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build
+```
+
+```
+
+&gt; contract-risk-management@1.0.0 build
+&gt; npm run build:main &amp;&amp; npm run build:renderer
+
+
+&gt; contract-risk-management@1.0.0 build:main
+&gt; tsc -p tsconfig.json &amp;&amp; tsc-alias -p tsconfig.json
+
+
+&gt; contract-risk-management@1.0.0 build:renderer
+&gt; vite build --config vite.renderer.config.mjs
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3082 modules transformed.
+rendering chunks...
+computing gzip size...
+../../dist/renderer/index.html                     0.53 kB │ gzip:   0.39 kB
+../../dist/renderer/assets/index-C5gI11eR.css     14.94 kB │ gzip:   3.32 kB
+../../dist/renderer/assets/index-OkLffH5G.js   1,156.25 kB │ gzip: 370.06 kB │ map: 5,323.85 kB
+✓ built in 8.05s
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+```
+</details>
+</tool-use>
+
+---
+
+編譯成功！現在提交：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "fix: 重寫 connection.ts 中所有中文註釋
+
+- 將所有亂碼的中文註釋重新編寫為正確的 UTF-8 編碼
+- 改善代碼可讀性
+- 不影響任何功能，純註釋修復"; git push</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "fix: 重寫 connection.ts 中所有中文註釋
+
+- 將所有亂碼的中文註釋重新編寫為正確的 UTF-8 編碼
+- 改善代碼可讀性
+- 不影響任何功能，純註釋修復"; git push
+```
+
+```
+[main c47a57c] fix: 重寫 connection.ts 中所有中文註釋
+ 2 files changed, 304 insertions(+), 82 deletions(-)
+warning: in the working copy of '.specstory/history/2026-03-08_16-12Z-document-parsing-error-missing-column.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'prompt.md', LF will be replaced by CRLF the next time Git touches it
+To https://github.com/peterRD5113/demo.git
+   9b13d6f..c47a57c  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+完成！✅ 所有中文註釋已經用正確的 UTF-8 編碼重寫。
+
+## 📋 今天完成的所有修復
+
+1. ✅ **F12 開發者工具**：啟動時自動打開
+2. ✅ **deleted_at 欄位**：添加到 documents 表
+3. ✅ **API 調用錯誤**：修復 `window.api` → `window.electronAPI`
+4. ✅ **風險規則**：支持繁體/簡體/英文，包含高/中/低三個等級
+5. ✅ **返回按鈕**：智能導航按鈕
+6. ✅ **Risk Count 顯示**：修復後端方法調用，現在會顯示正確的風險數量
+7. ✅ **中文註釋亂碼**：重寫所有註釋為正確的 UTF-8 編碼
+
+## 🎯 現在請測試
+
+請重新啟動應用程式並測試：
+
+1. **文檔列表頁面**：
+   - Risk Count 列應該顯示正確的數字（例如：⚠️ 23 Risks）
+   - 有「← Back to Projects」按鈕
+
+2. **文檔審閱頁面**：
+   - 風險統計顯示高/中/低風險數量
+   - 每個條款標記正確的風險等級
+   - 有「← Back to Documents」按鈕
+
+請告訴我測試結果！
+
+---
+
+_**User**_
+
+接下來 txt 文件是可以 解析 但是 pdf 跟 docx 都還不行, 上傳後內容都是空的, 要仔細看一下解析功能的部份
+
+---
+
+_**Agent (model gpt-5.3-codex, mode Agent)**_
+
+好的！讓我檢查文檔解析功能。首先讓我查看文檔處理服務：
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "parseDocument|extractText|pdf|docx",
+  "path": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\main\\services",
+  "outputMode": "content",
+  "context": 10,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "parseDocument|extractText|pdf|docx",
+  "path": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\main\\services",
+  "outputMode": "content",
+  "totalFiles": 4,
+  "totalMatches": 15,
+  "topFiles": [
+    {
+      "uri": "desktop/src/main/services/DocumentService.ts",
+      "matchCount": 59
+    },
+    {
+      "uri": "desktop\\src\\main\\services\\DocumentService.ts",
+      "matchCount": 59
+    },
+    {
+      "uri": "desktop/src/main/services/ExportService.ts",
+      "matchCount": 89
+    },
+    {
+      "uri": "desktop/src/main/services/DocumentParserService.ts",
+      "matchCount": 37
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+讓我查看完整的文檔解析服務：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\DocumentParserService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+我看到了！PDF 和 DOCX 的解析功能確實還沒有實現，只是返回了錯誤消息。讓我實現這兩個解析器。首先檢查是否已經安裝了相關的依賴：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; Get-Content package.json | Select-String -Pattern "pdf|docx|mammoth"</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; Get-Content package.json | Select-String -Pattern "pdf|docx|mammoth"
+```
+
+```
+
+    "mammoth": "^1.6.0",
+    "docx": "^8.5.0",
+    "pdfjs-dist": "^3.11.174",
+    "pdf-lib": "^1.17.1",
+    "pdfkit": "^0.17.2",
+
+```
+</details>
+</tool-use>
+
+---
+
+很好！已經安裝了需要的庫。讓我實現 PDF 和 DOCX 的解析功能：
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\DocumentParserService.ts</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\DocumentParserService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+

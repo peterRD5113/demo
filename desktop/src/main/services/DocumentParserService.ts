@@ -43,15 +43,11 @@ class DocumentParserService {
           clauses = await this.parseTxtFile(filePath);
           break;
         case 'docx':
-          return {
-            success: false,
-            message: 'DOCX 解析功能尚未實現'
-          };
+          clauses = await this.parseDocxFile(filePath);
+          break;
         case 'pdf':
-          return {
-            success: false,
-            message: 'PDF 解析功能尚未實現'
-          };
+          clauses = await this.parsePdfFile(filePath);
+          break;
         default:
           return {
             success: false,
@@ -91,7 +87,61 @@ class DocumentParserService {
   private async parseTxtFile(filePath: string): Promise<ParsedClause[]> {
     const content = fs.readFileSync(filePath, 'utf-8');
     const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    return this.parseLines(lines);
+  }
 
+  /**
+   * 解析 DOCX 文件
+   */
+  private async parseDocxFile(filePath: string): Promise<ParsedClause[]> {
+    const mammoth = require('mammoth');
+    
+    // 使用 mammoth 提取文本
+    const result = await mammoth.extractRawText({ path: filePath });
+    const text = result.value;
+    
+    console.log(`DOCX 文本提取完成，長度: ${text.length}`);
+    
+    // 將文本按行分割
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    return this.parseLines(lines);
+  }
+
+  /**
+   * 解析 PDF 文件
+   */
+  private async parsePdfFile(filePath: string): Promise<ParsedClause[]> {
+    const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+    
+    // 讀取 PDF 文件
+    const data = new Uint8Array(fs.readFileSync(filePath));
+    const loadingTask = pdfjsLib.getDocument({ data });
+    const pdf = await loadingTask.promise;
+    
+    console.log(`PDF 頁數: ${pdf.numPages}`);
+    
+    // 提取所有頁面的文本
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map((item: any) => item.str).join(' ');
+      fullText += pageText + '\n';
+    }
+    
+    console.log(`PDF 文本提取完成，長度: ${fullText.length}`);
+    
+    // 將文本按行分割
+    const lines = fullText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    return this.parseLines(lines);
+  }
+
+  /**
+   * 解析文本行（通用方法）
+   */
+  private parseLines(lines: string[]): ParsedClause[] {
     const clauses: ParsedClause[] = [];
     const state: NumberingState = {
       level1: 0,
@@ -147,6 +197,8 @@ class DocumentParserService {
         orderIndex: orderIndex++
       });
     }
+
+    console.log(`解析完成，共提取 ${clauses.length} 個條款`);
 
     return clauses;
   }
