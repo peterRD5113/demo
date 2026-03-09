@@ -6892,3 +6892,652 @@ Optimizing conversation history
 
 ---
 
+我看到了！**IPC handler 的日誌完全沒有出現**！
+
+這說明：
+- 前端成功調用了 `window.electronAPI.annotation.create`
+- 但請求**根本沒有到達 IPC handler**
+
+這意味著問題在於：
+1. **IPC channel 名稱不匹配**，或
+2. **IPC handler 沒有正確註冊**
+
+讓我檢查 channel 名稱定義：
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **1** result in **1** directory</summary>
+
+Directory: **c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc** (1 file)
+
+| File |
+|------|
+| `desktop/src/main/ipc/channels.ts` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\channels.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+Optimizing conversation history
+
+---
+
+I can see the issue now. The frontend logs show the annotation creation attempt is reaching `AnnotationPanel.tsx:100`, but there are no IPC handler logs appearing. This confirms the IPC handler is not being invoked.
+
+Let me check the channel definitions to verify the channel name matches:
+
+---
+
+File not found: c:\Users\fortu\Desktop\Project\Demo\src\shared\channels.ts
+
+---
+
+Let me search for the channels file:
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **2** results in **1** directory</summary>
+
+Directory: **c:\Users\fortu\Desktop\Project\Demo** (2 files)
+
+| File |
+|------|
+| `desktop/src/main/ipc/channels.ts` |
+| `desktop/src/preload/ipc/channels.ts` |
+
+</details>
+</tool-use>
+
+---
+
+I see there are two separate channel definition files. Let me check both to see if they match:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\channels.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\preload\ipc\channels.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+Found the issue! There are **two different channel definition files** with **different structures**:
+
+1. **Preload** (`desktop/src/preload/ipc/channels.ts`): Uses flat `IPC_CHANNELS` object with `ANNOTATION_CREATE: 'annotation:create'`
+2. **Main** (`desktop/src/main/ipc/channels.ts`): Uses grouped constants like `ANNOTATION_CHANNELS.CREATE: 'annotation:create'`
+
+The channel **values** match (`'annotation:create'`), but the **import paths and structures differ**. Let me check which one the IPC handler is using:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\handlers\annotationHandlers.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+Good! The handler is correctly importing from `../channels` (the main process channels file) and using `ANNOTATION_CHANNELS.CREATE`. Now let me check if the handlers are actually being registered in the main process entry point:
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **0** result in **1** directory</summary>
+
+Directory: **c:\Users\fortu\Desktop\Project\Demo\desktop** (0 file)
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **6** results in **1** directory</summary>
+
+Directory: **c:\Users\fortu\Desktop\Project\Demo\desktop\src\main** (6 files)
+
+| File |
+|------|
+| `desktop/src/main/middleware/index.ts` |
+| `desktop/src/main/index.ts` |
+| `desktop/src/main/ipc/index.ts` |
+| `desktop\src\main\index.ts` |
+| `desktop/src/main/services/index.ts` |
+| `desktop/src/main/repositories/index.ts` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\index.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+Good! The main process is calling `registerIPCHandlers()`. Now let me check that function to see if it's registering the annotation handlers:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\index.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+Perfect! The annotation handlers ARE being registered. Now let me check the preload script to see how the frontend API is set up:
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **1** result in **1** directory</summary>
+
+Directory: **c:\Users\fortu\Desktop\Project\Demo\desktop\src\preload** (1 file)
+
+| File |
+|------|
+| `desktop/src/preload/index.ts` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\preload\index.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+Perfect! I found it. The preload script is correctly set up and uses `ANNOTATION_CHANNELS.CREATE` which maps to `'annotation:create'`. The channel names match between preload and main process.
+
+However, I notice the logs show the IPC handler registration logs are missing. Let me add a more prominent log at the very start of the `register` function to confirm it's being called:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\handlers\annotationHandlers.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+I can see the logs are already there. The issue is that these logs aren't appearing in the console, which means either:
+
+1. The `register` function isn't being called at all
+2. The logs are going to a different console (main process console, not renderer DevTools)
+
+Let me check if there's a main process log file or if we need to look at the terminal output. But first, let me verify the handler is actually being exported correctly:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\handlers\annotationHandlers.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "export.*annotationHandlers",
+  "path": "c:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\main\\ipc\\handlers\\annotationHandlers.ts",
+  "outputMode": "files_with_matches",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "export.*annotationHandlers",
+  "path": "c:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\main\\ipc\\handlers\\annotationHandlers.ts",
+  "outputMode": "files_with_matches",
+  "totalFiles": 1,
+  "totalMatches": 1,
+  "topFiles": [
+    {
+      "uri": "desktop\\src\\main\\ipc\\handlers\\annotationHandlers.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\handlers\annotationHandlers.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+Let me check the end of the file to see the export:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: tail -20 "c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\handlers\annotationHandlers.ts"</summary>
+
+```bash
+tail -20 "c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\handlers\annotationHandlers.ts"
+```
+
+```
+tail : �L�k���� 'tail' ���J�O�_�� Cmdlet�B��ơB���O�ɩΥi����{�����W�١C���ˬd�W�٫��r�O�_���T�A�p�G�]�t���|���ܡA�нT�{
+���|�O�_���T�A�M��A�դ@���C
+��� C:\Users\fortu\AppData\Local\Temp\ps-script-c720095b-aa03-4c50-be31-d38151f538e6.ps1:92 �r��:1
++ tail -20 "c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\ha ...
++ ~~~~
+    + CategoryInfo          : ObjectNotFound: (tail:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\handlers\annotationHandlers.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+Good! The export is correct. Now I understand the issue - **the console logs from the main process don't appear in the browser DevTools console**. They appear in the terminal where you ran the Electron app.
+
+The logs you're seeing in the browser console are only from the renderer process (frontend). The IPC handler logs are in the **main process** and would appear in the terminal/command prompt where you started the application.
+
+Let me add a log that will appear in the **renderer console** by sending a message back, or we can check the terminal output. But first, let me verify the issue by adding a test that will definitely show in the renderer:
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+Let me read the exact content around that area:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\handlers\annotationHandlers.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+Now I can see the exact format. Let me update it:
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+Let me check if there are any hidden characters or spacing issues:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\fortu\Desktop\Project\Demo" && cat -A desktop/src/main/ipc/handlers/annotationHandlers.ts | Select-Object -First 30 -Skip 17</summary>
+
+```bash
+cd "c:\Users\fortu\Desktop\Project\Demo" && cat -A desktop/src/main/ipc/handlers/annotationHandlers.ts | Select-Object -First 30 -Skip 17
+```
+
+```
+��� C:\Users\fortu\AppData\Local\Temp\ps-script-8d0b510e-63cb-4ff9-a23b-51a47c64cc4c.ps1:92 �r��:42
++ cd "c:\Users\fortu\Desktop\Project\Demo" &amp;&amp; cat -A desktop/src/main/i ...
++                                          ~~
+�b�o�Ӫ����� '&amp;&amp;' �y�J�򤸤��O���Ī����z�����j�Ÿ��C
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+
+```
+</details>
+</tool-use>
+
+---
+
+Let me try a different approach - I'll write a new version of the handler with better logging:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\handlers\annotationHandlers.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+Now I'll write the updated version with enhanced logging that will help us see what's happening:
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\handlers\annotationHandlers.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Good! Now let's rebuild and test. But before that, let me also check if we can see the terminal output. The key insight is that **main process logs appear in the terminal, not in the browser DevTools**. 
+
+Let me build the project:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\fortu\Desktop\Project\Demo" && npm run build:desktop 2>&1</summary>
+
+```bash
+cd "c:\Users\fortu\Desktop\Project\Demo" && npm run build:desktop 2>&1
+```
+
+```
++ cd "c:\Users\fortu\Desktop\Project\Demo" &amp;&amp; npm run build:desktop 2&gt;&amp; ...
++                                          ~~
+�b�o�Ӫ����� '&amp;&amp;' �y�J�򤸤��O���Ī����z�����j�Ÿ��C
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+��� C:\Users\fortu\AppData\Local\Temp\ps-script-7be8cd43-8328-4258-923d-4b1a6c535b16.ps1:92 �r��:42
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\fortu\Desktop\Project\Demo; npm run build:desktop</summary>
+
+```bash
+cd c:\Users\fortu\Desktop\Project\Demo; npm run build:desktop
+```
+
+```
+ ERR! Missing script: "build:desktop"
+npm ERR! 
+npm ERR! To see a list of scripts, run:
+npm ERR!   npm run
+npm
+npm ERR! A complete log of this run can be found in: C:\Users\fortu\AppData\Local\npm-cache\_logs\2026-03-09T14_13_07_602Z-debug-0.log
+
+```
+</details>
+</tool-use>
+
+---
+
+Let me check the available scripts:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\fortu\Desktop\Project\Demo; npm run</summary>
+
+```bash
+cd c:\Users\fortu\Desktop\Project\Demo; npm run
+```
+
+```
+Lifecycle scripts included in contract-risk-management@1.0.0:
+  test
+    bash run_tests.sh
+
+available via &#96;npm run-script&#96;:
+  test:unit
+    cd unit_tests &amp;&amp; npx jest --config jest.config.js
+  test:api
+    cd API_tests &amp;&amp; npx jest --config jest.config.js
+  test:coverage
+    cd unit_tests &amp;&amp; npx jest --config jest.config.js --coverage
+  test:watch
+    cd unit_tests &amp;&amp; npx jest --config jest.config.js --watch
+
+
+```
+</details>
+</tool-use>
+
+---
+
+Let me check the desktop directory for build scripts:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\package.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+Now let me build the desktop app:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\fortu\Desktop\Project\Demo\desktop; npm run build</summary>
+
+```bash
+cd c:\Users\fortu\Desktop\Project\Demo\desktop; npm run build
+```
+
+```
+
+&gt; contract-risk-management@1.0.0 build
+&gt; npm run build:main &amp;&amp; npm run build:renderer
+
+
+&gt; contract-risk-management@1.0.0 build:main
+&gt; tsc -p tsconfig.json &amp;&amp; tsc-alias -p tsconfig.json
+
+
+&gt; contract-risk-management@1.0.0 build:renderer
+&gt; vite build --config vite.renderer.config.mjs
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3082 modules transformed.
+rendering chunks...
+computing gzip size...
+../../dist/renderer/index.html                     0.53 kB │ gzip:   0.39 kB
+../../dist/renderer/assets/index-C5gI11eR.css     14.94 kB │ gzip:   3.32 kB
+../../dist/renderer/assets/index-PqbVBMuF.js   1,160.07 kB │ gzip: 370.97 kB │ map: 5,336.46 kB
+✓ built in 8.57s
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+```
+</details>
+</tool-use>
+
+---
+
+Perfect! Build successful. Now let's commit and push these changes:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\fortu\Desktop\Project\Demo; git add -A</summary>
+
+```bash
+cd c:\Users\fortu\Desktop\Project\Demo; git add -A
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\fortu\Desktop\Project\Demo; git commit -m "Add enhanced logging to annotation IPC handlers to debug channel registration"</summary>
+
+```bash
+cd c:\Users\fortu\Desktop\Project\Demo; git commit -m "Add enhanced logging to annotation IPC handlers to debug channel registration"
+```
+
+```
+[main 279d4d7] Add enhanced logging to annotation IPC handlers to debug channel registration
+ 2 files changed, 6519 insertions(+), 6 deletions(-)
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\fortu\Desktop\Project\Demo; git push</summary>
+
+```bash
+cd c:\Users\fortu\Desktop\Project\Demo; git push
+```
+
+```
+To https://github.com/peterRD5113/demo.git
+   5928fbd..279d4d7  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+Perfect! Now, here's the critical insight about debugging this issue:
+
+## Important: Main Process vs Renderer Process Logging
+
+The logs you've been seeing in the browser DevTools console are **only from the renderer process (frontend)**. The IPC handler logs are in the **main process** and will appear in the **terminal/command prompt where you started the Electron app**, not in the browser.
+
+### Next Steps to Debug:
+
+1. **Check the terminal output** where you ran `npm start` or `electron .` - you should see logs like:
+   - `=== ANNOTATION HANDLERS: Starting registration ===`
+   - `Channel to register: annotation:create`
+   - `=== ANNOTATION HANDLERS: CREATE handler registered ===`
+
+2. **When you try to create an annotation**, the terminal should show:
+   - `=== MAIN PROCESS: IPC handler invoked ===`
+   - `Channel: annotation:create`
+   - `Request: { clauseId: 4, userId: 2, ... }`
+
+3. **If you don't see these logs in the terminal**, it means:
+   - The handler registration is failing silently
+   - There's an error during app initialization
+   - The IPC handler isn't being registered at all
+
+### What to Check:
+
+**Please check your terminal output and share:**
+- Any logs that appear when the app starts
+- Any logs that appear when you try to create an annotation
+- Any error messages in the terminal
+
+The browser console will only show the frontend logs (which we already see), but the main process logs (where the actual IPC handler runs) will be in the terminal.
+
+---
+
+_**User**_
+
+ndleClauseClick called with clauseId: 4
+DocumentReviewPage.tsx:167 Found clause: {id: 4, document_id: 1, clause_number: '1', title: '第1條 合同目的', content: '本合同旨在明確甲乙雙方在軟件開發項目中的權利義務關係，保障雙方合法權益。', …}clause_number: "1"content: "本合同旨在明確甲乙雙方在軟件開發項目中的權利義務關係，保障雙方合法權益。"created_at: "2026-03-09 14:35:56"document_id: 1id: 4level: 1order_index: 3page_number: nullparent_id: nulltitle: "第1條 合同目的"updated_at: "2026-03-09 14:35:56"[[Prototype]]: Object
+DocumentReviewPage.tsx:169 Setting selectedClauseId to: 4
+DocumentReviewPage.tsx:43 DocumentReviewPage mounted
+DocumentReviewPage.tsx:45 Route params: {projectId: '1', documentId: '1'}documentId: "1"projectId: "1"[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+DocumentReviewPage.tsx:47 Token available: true
+AnnotationPanel.tsx:100 Creating annotation with: 
+
+
+@c:\Users\fortu\.cursor\projects\c-Users-fortu-Desktop-Project-Demo\terminals\4.txt:986-1015 
+
+你再仔細看一下都先不動做先分析一下, 可能的問題
+
+---
+
+_**Agent (model claude-4.6-sonnet-medium, mode Agent)**_
+
+太好了！現在我們終於看到了主進程的日誌！讓我仔細分析這個錯誤：
+
+## 問題分析
+
+從終端輸出可以看到：
+
+```
+About to execute SQL with params: { clauseId: 4, userId: 2, content: '123213', type: 'comment' }
+Create annotation failed: Error: NOT NULL constraint failed: annotations.clause_id
+```
+
+### 關鍵發現：
+
+1. **IPC 處理器確實被調用了** ✅
+   - 請求成功到達了 `AnnotationService.createAnnotation`
+   - 參
+
+---
+

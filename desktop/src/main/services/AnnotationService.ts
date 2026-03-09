@@ -111,14 +111,17 @@ class AnnotationService {
 
       console.log('About to execute SQL with params:', { clauseId, userId, content, type });
 
-      // 創建備註
-      const stmt = getDb().prepare(`
+      // 創建備註 - 使用 sql.js 的正確 API（參數必須是數組）
+      const sql = `
         INSERT INTO annotations (clause_id, user_id, content, type, status)
         VALUES (?, ?, ?, ?, 'active')
-      `);
+      `;
       
-      const result = stmt.run(clauseId, userId, content, type);
-      const annotationId = result.lastInsertRowid as number;
+      getDb().run(sql, [clauseId, userId, content, type]);
+      
+      // 獲取插入的 ID
+      const result = getDb().exec('SELECT last_insert_rowid() as id');
+      const annotationId = result[0].values[0][0] as number;
 
       console.log('Annotation created with ID:', annotationId);
 
@@ -188,8 +191,8 @@ class AnnotationService {
         };
       }
 
-      // 獲取備註列表（包含用戶信息）
-      const stmt = getDb().prepare(`
+      // 獲取備註列表（包含用戶信息）- 使用 sql.js 的 exec 方法
+      const sql = `
         SELECT 
           a.*,
           u.username,
@@ -198,9 +201,25 @@ class AnnotationService {
         LEFT JOIN users u ON a.user_id = u.id
         WHERE a.clause_id = ? AND a.status != 'deleted'
         ORDER BY a.created_at DESC
-      `);
+      `;
       
-      const annotations = stmt.all(clauseId) as any[];
+      const results = getDb().exec(sql, [clauseId]);
+      
+      if (results.length === 0) {
+        return {
+          annotations: [],
+          total: 0
+        };
+      }
+
+      const { columns, values } = results[0];
+      const annotations = values.map(row => {
+        const obj: any = {};
+        columns.forEach((col, idx) => {
+          obj[col] = row[idx];
+        });
+        return obj;
+      });
 
       return {
         annotations,
@@ -230,15 +249,20 @@ class AnnotationService {
       validateRequiredString(content, 'Annotation content', 1, 2000);
 
       // 檢查備註是否存在
-      const stmt = getDb().prepare('SELECT * FROM annotations WHERE id = ?');
-      const annotation = stmt.get(annotationId) as Annotation | undefined;
+      const results = getDb().exec('SELECT * FROM annotations WHERE id = ?', [annotationId]);
       
-      if (!annotation) {
+      if (results.length === 0 || results[0].values.length === 0) {
         return {
           success: false,
           message: 'Annotation not found'
         };
       }
+
+      const { columns, values } = results[0];
+      const annotation: any = {};
+      columns.forEach((col, idx) => {
+        annotation[col] = values[0][idx];
+      });
 
       // 檢查是否為批註作者
       if (annotation.user_id !== userId) {
@@ -249,20 +273,17 @@ class AnnotationService {
       }
 
       // 更新備註
-      const updateStmt = getDb().prepare(`
+      getDb().run(`
         UPDATE annotations 
         SET content = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `);
-      
-      updateStmt.run(content, annotationId);
+      `, [content, annotationId]);
 
       // 更新處理 @mentions
       const mentions = this.extractMentions(content);
       if (mentions.length > 0) {
         // 刪除舊的 mentions
-        const deleteMentionsStmt = getDb().prepare('DELETE FROM mentions WHERE annotation_id = ?');
-        deleteMentionsStmt.run(annotationId);
+        getDb().run('DELETE FROM mentions WHERE annotation_id = ?', [annotationId]);
 
         // 創建新的 mentions
         const clause = clauseRepository.findById(annotation.clause_id);
@@ -308,15 +329,20 @@ class AnnotationService {
       validatePositiveInteger(userId, 'User ID');
 
       // 檢查備註是否存在
-      const stmt = getDb().prepare('SELECT * FROM annotations WHERE id = ?');
-      const annotation = stmt.get(annotationId) as Annotation | undefined;
+      const results = getDb().exec('SELECT * FROM annotations WHERE id = ?', [annotationId]);
       
-      if (!annotation) {
+      if (results.length === 0 || results[0].values.length === 0) {
         return {
           success: false,
           message: 'Annotation not found'
         };
       }
+
+      const { columns, values } = results[0];
+      const annotation: any = {};
+      columns.forEach((col, idx) => {
+        annotation[col] = values[0][idx];
+      });
 
       // 檢查是否為批註作者
       if (annotation.user_id !== userId) {
@@ -327,13 +353,11 @@ class AnnotationService {
       }
 
       // 軟刪除批註
-      const updateStmt = getDb().prepare(`
+      getDb().run(`
         UPDATE annotations 
         SET status = 'deleted', updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `);
-      
-      updateStmt.run(annotationId);
+      `, [annotationId]);
 
       return {
         success: true,
@@ -369,10 +393,9 @@ class AnnotationService {
       validatePositiveInteger(userId, 'User ID');
 
       // 檢查備註是否存在
-      const stmt = getDb().prepare('SELECT * FROM annotations WHERE id = ?');
-      const annotation = stmt.get(annotationId) as Annotation | undefined;
+      const results = getDb().exec('SELECT * FROM annotations WHERE id = ?', [annotationId]);
       
-      if (!annotation) {
+      if (results.length === 0 || results[0].values.length === 0) {
         return {
           success: false,
           message: 'Annotation not found'
@@ -380,22 +403,18 @@ class AnnotationService {
       }
 
       // 更新狀態為 resolved
-      const updateStmt = getDb().prepare(`
+      getDb().run(`
         UPDATE annotations 
         SET status = 'resolved', updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `);
-      
-      updateStmt.run(annotationId);
+      `, [annotationId]);
 
       // 更新相關 mentions 狀態
-      const updateMentionsStmt = getDb().prepare(`
+      getDb().run(`
         UPDATE mentions 
         SET status = 'resolved'
         WHERE annotation_id = ?
-      `);
-      
-      updateMentionsStmt.run(annotationId);
+      `, [annotationId]);
 
       return {
         success: true,
@@ -439,7 +458,7 @@ class AnnotationService {
       }
 
       // 獲取待確認的 mentions
-      const stmt = getDb().prepare(`
+      const sql = `
         SELECT 
           m.*,
           a.content as annotation_content,
@@ -459,9 +478,25 @@ class AnnotationService {
           AND m.status = 'pending'
           AND d.project_id = ?
         ORDER BY m.created_at DESC
-      `);
+      `;
       
-      const mentions = stmt.all(userId, projectId) as any[];
+      const results = getDb().exec(sql, [userId, projectId]);
+      
+      if (results.length === 0) {
+        return {
+          mentions: [],
+          total: 0
+        };
+      }
+
+      const { columns, values } = results[0];
+      const mentions = values.map(row => {
+        const obj: any = {};
+        columns.forEach((col, idx) => {
+          obj[col] = row[idx];
+        });
+        return obj;
+      });
 
       return {
         mentions,
@@ -489,15 +524,20 @@ class AnnotationService {
       validatePositiveInteger(userId, 'User ID');
 
       // 檢查 mention 是否存在
-      const stmt = getDb().prepare('SELECT * FROM mentions WHERE id = ?');
-      const mention = stmt.get(mentionId) as Mention | undefined;
+      const results = getDb().exec('SELECT * FROM mentions WHERE id = ?', [mentionId]);
       
-      if (!mention) {
+      if (results.length === 0 || results[0].values.length === 0) {
         return {
           success: false,
           message: 'Mention not found'
         };
       }
+
+      const { columns, values } = results[0];
+      const mention: any = {};
+      columns.forEach((col, idx) => {
+        mention[col] = values[0][idx];
+      });
 
       // 檢查是否為被 @ 的用戶
       if (mention.mentioned_user_id !== userId) {
@@ -508,13 +548,11 @@ class AnnotationService {
       }
 
       // 更新狀態為 read
-      const updateStmt = getDb().prepare(`
+      getDb().run(`
         UPDATE mentions 
         SET status = 'read'
         WHERE id = ?
-      `);
-      
-      updateStmt.run(mentionId);
+      `, [mentionId]);
 
       return {
         success: true,
@@ -561,11 +599,6 @@ class AnnotationService {
     projectId: number
   ): Promise<void> {
     try {
-      const stmt = getDb().prepare(`
-        INSERT INTO mentions (annotation_id, mentioned_user_id, status)
-        VALUES (?, ?, 'pending')
-      `);
-
       for (const username of usernames) {
         // 查找用戶
         const user = userRepository.findByUsername(username);
@@ -573,7 +606,10 @@ class AnnotationService {
         if (user) {
           // 檢查用戶是否屬於該項目
           if (projectRepository.isOwnedByUser(projectId, user.id)) {
-            stmt.run(annotationId, user.id);
+            getDb().run(`
+              INSERT INTO mentions (annotation_id, mentioned_user_id, status)
+              VALUES (?, ?, 'pending')
+            `, [annotationId, user.id]);
           }
         }
       }
