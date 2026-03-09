@@ -56,6 +56,12 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
       return;
     }
 
+    if (!clauseId || clauseId <= 0) {
+      console.error('Invalid clauseId:', clauseId);
+      message.error('無效的條款ID');
+      return;
+    }
+
     setLoading(true);
     try {
       const result = await window.electronAPI.annotation.getByClause(clauseId, user.id);
@@ -79,12 +85,20 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
       return;
     }
 
+    if (!clauseId || clauseId <= 0) {
+      console.error('Invalid clauseId:', clauseId);
+      message.error('無效的條款ID');
+      return;
+    }
+
     if (!newContent.trim()) {
       message.error('備註內容不能為空');
       return;
     }
 
     try {
+      console.log('Creating annotation with:', { clauseId, userId: user.id, content: newContent, type: newType });
+      
       const result = await window.electronAPI.annotation.create(
         clauseId,
         user.id,
