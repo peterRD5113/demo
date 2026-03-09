@@ -9211,3 +9211,561 @@ Error: StrReplace failed: old_string not found
 
 ---
 
+Error: StrReplace failed: old_string not found
+
+---
+
+讓我用 Shell 命令直接替換：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services; $content = Get-Content DocumentParserService.ts -Raw; $content = $content -replace "const pageText = textContent\.items\.map\(\(item: any\) => item\.str\)\.join\(' '\);[\r\n\s]+fullText \+= pageText \+ '\\n';", @'
+// 改進文本提取：保留換行符和段落結構
+      let pageText = '';
+      let lastY = -1;
+      
+      for (const item of textContent.items) {
+        const currentY = item.transform[5];
+        
+        // 如果 Y 坐標變化較大，說明是新的一行
+        if (lastY !== -1 && Math.abs(currentY - lastY) > 5) {
+          pageText += '\n';
+        }
+        
+        pageText += item.str;
+        
+        // 如果這個文本項後面有空格，添加空格
+        if (item.hasEOL || (item.str && !item.str.endsWith(' '))) {
+          pageText += ' ';
+        }
+        
+        lastY = currentY;
+      }
+      
+      fullText += pageText + '\n\n';
+'@; $content = $content -replace "console\.log\(`PDF 文本提取完成，長度: \$\{fullText\.length\}`\);", @'
+console.log(`PDF 文本提取完成，長度: ${fullText.length}`);
+    console.log(`PDF 文本前 500 字符:`, fullText.substring(0, 500));
+'@; $content = $content -replace "const lines = fullText\.split\('\\n'\)\.map\(line => line\.trim\(\)\)\.filter\(line => line\.length > 0\);[\r\n\s]+return this\.parseLines\(lines\);", @'
+const lines = fullText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    console.log(`PDF 共 ${lines.length} 行文本`);
+    console.log(`前 10 行:`, lines.slice(0, 10));
+    
+    return this.parseLines(lines);
+'@; Set-Content DocumentParserService.ts -Value $content -Encoding UTF8; echo "File updated"</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services; $content = Get-Content DocumentParserService.ts -Raw; $content = $content -replace "const pageText = textContent\.items\.map\(\(item: any\) => item\.str\)\.join\(' '\);[\r\n\s]+fullText \+= pageText \+ '\\n';", @'
+// 改進文本提取：保留換行符和段落結構
+      let pageText = '';
+      let lastY = -1;
+      
+      for (const item of textContent.items) {
+        const currentY = item.transform[5];
+        
+        // 如果 Y 坐標變化較大，說明是新的一行
+        if (lastY !== -1 && Math.abs(currentY - lastY) > 5) {
+          pageText += '\n';
+        }
+        
+        pageText += item.str;
+        
+        // 如果這個文本項後面有空格，添加空格
+        if (item.hasEOL || (item.str && !item.str.endsWith(' '))) {
+          pageText += ' ';
+        }
+        
+        lastY = currentY;
+      }
+      
+      fullText += pageText + '\n\n';
+'@; $content = $content -replace "console\.log\(`PDF 文本提取完成，長度: \$\{fullText\.length\}`\);", @'
+console.log(`PDF 文本提取完成，長度: ${fullText.length}`);
+    console.log(`PDF 文本前 500 字符:`, fullText.substring(0, 500));
+'@; $content = $content -replace "const lines = fullText\.split\('\\n'\)\.map\(line => line\.trim\(\)\)\.filter\(line => line\.length > 0\);[\r\n\s]+return this\.parseLines\(lines\);", @'
+const lines = fullText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    console.log(`PDF 共 ${lines.length} 行文本`);
+    console.log(`前 10 行:`, lines.slice(0, 10));
+    
+    return this.parseLines(lines);
+'@; Set-Content DocumentParserService.ts -Value $content -Encoding UTF8; echo "File updated"
+```
+
+```
+File updated
+
+```
+</details>
+</tool-use>
+
+---
+
+好的！現在讓我編譯並測試：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build
+```
+
+```
+
+&gt; contract-risk-management@1.0.0 build
+&gt; npm run build:main &amp;&amp; npm run build:renderer
+
+
+&gt; contract-risk-management@1.0.0 build:main
+&gt; tsc -p tsconfig.json &amp;&amp; tsc-alias -p tsconfig.json
+
+src/main/services/DocumentParserService.ts(61,38): error TS1002: Unterminated string literal.
+src/main/services/DocumentParserService.ts(103,18): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(103,24): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(103,25): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(103,26): error TS1135: Argument expression expected.
+src/main/services/DocumentParserService.ts(103,27): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(103,28): error TS1135: Argument expression expected.
+src/main/services/DocumentParserService.ts(103,30): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(103,31): error TS1135: Argument expression expected.
+src/main/services/DocumentParserService.ts(103,33): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(103,34): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(103,39): error TS1005: ':' expected.
+src/main/services/DocumentParserService.ts(103,44): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(122,18): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(122,23): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(122,24): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(122,25): error TS1135: Argument expression expected.
+src/main/services/DocumentParserService.ts(122,28): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(122,32): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(154,18): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(154,23): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(154,24): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(154,25): error TS1135: Argument expression expected.
+src/main/services/DocumentParserService.ts(154,26): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(154,27): error TS1135: Argument expression expected.
+src/main/services/DocumentParserService.ts(154,29): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(154,30): error TS1135: Argument expression expected.
+src/main/services/DocumentParserService.ts(154,32): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(154,33): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(154,38): error TS1005: ':' expected.
+src/main/services/DocumentParserService.ts(154,47): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(159,18): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(159,22): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(159,24): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(159,25): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(159,31): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(159,40): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(160,18): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(160,20): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(160,23): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(160,24): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(225,18): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(225,22): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(225,23): error TS1135: Argument expression expected.
+src/main/services/DocumentParserService.ts(225,25): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(225,26): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(225,27): error TS1135: Argument expression expected.
+src/main/services/DocumentParserService.ts(225,28): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(225,29): error TS1135: Argument expression expected.
+src/main/services/DocumentParserService.ts(225,32): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(225,40): error TS1005: ',' expected.
+src/main/services/DocumentParserService.ts(225,50): error TS1127: Invalid character.
+src/main/services/DocumentParserService.ts(225,51): error TS1135: Argument expression expected.
+src/main/services/DocumentParserService.ts(234,3): error TS1472: 'catch' or 'finally' expected.
+
+```
+</details>
+</tool-use>
+
+---
+
+Shell 替換出錯了。讓我直接重寫整個 parsePdfFile 方法。讓我重新讀取並完整重寫文件：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; git checkout src/main/services/DocumentParserService.ts</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; git checkout src/main/services/DocumentParserService.ts
+```
+
+```
+Updated 1 path from the index
+
+```
+</details>
+</tool-use>
+
+---
+
+好的，文件已恢復。現在讓我重新讀取並正確修改：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\DocumentParserService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+現在讓我用 StrReplace 正確替換 PDF 解析方法中的文本提取部分：
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+Optimizing conversation history
+
+---
+
+讓我檢查確切的空格和縮進：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services; Get-Content DocumentParserService.ts -Raw | Select-String -Pattern "提取所有頁面的文本" -Context 0,15 | ForEach-Object { $_.Context.PostContext }</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services; Get-Content DocumentParserService.ts -Raw | Select-String -Pattern "提取所有頁面的文本" -Context 0,15 | ForEach-Object { $_.Context.PostContext }
+```
+</details>
+</tool-use>
+
+---
+
+讓我直接用 Write 重寫整個文件，這樣更可靠：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\DocumentParserService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+現在讓我修改 parsePdfFile 方法，改善文本提取並添加調試日誌：
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+讓我檢查路徑分隔符：
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+讓我檢查文件內容，看看是否有隱藏字符：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services; (Get-Content DocumentParserService.ts -Raw).Substring(3800, 800)</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services; (Get-Content DocumentParserService.ts -Raw).Substring(3800, 800)
+```
+
+```
+Text.length}&#96;);
+    
+    // 將�??��?行�???
+    const lines = fullText.split('\n').map(line =&gt; line.trim()).filter(line =&gt; line.length &gt; 0);
+    
+    return this.parseLines(lines);
+  }
+
+  /**
+   * �???�本行�??�用?��?�?
+   */
+  private parseLines(lines: string[]): ParsedClause[] {
+    const clauses: ParsedClause[] = [];
+    const state: NumberingState = {
+      level1: 0,
+      level2: 0,
+      level3: 0,
+      currentLevel1Id: null,
+      currentLevel2Id: null
+    };
+
+    let orderIndex = 0;
+    let currentContent: string[] = [];
+    let currentTitle: string | null = null;
+    let currentLevel = 0;
+
+    for (let i = 0; i &lt; lines.length; i++) {
+      const line = lines[i];
+
+      // 檢測條款標�?
+      const clauseInfo = this.detectClauseTitle(line);
+
+      if (clauseInfo)
+
+```
+</details>
+</tool-use>
+
+---
+
+文件又有亂碼了。讓我完全重寫整個文件，確保所有中文都正確：
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\DocumentParserService.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+完成！現在讓我編譯：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build
+```
+
+```
+
+&gt; contract-risk-management@1.0.0 build
+&gt; npm run build:main &amp;&amp; npm run build:renderer
+
+
+&gt; contract-risk-management@1.0.0 build:main
+&gt; tsc -p tsconfig.json &amp;&amp; tsc-alias -p tsconfig.json
+
+
+&gt; contract-risk-management@1.0.0 build:renderer
+&gt; vite build --config vite.renderer.config.mjs
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3082 modules transformed.
+rendering chunks...
+computing gzip size...
+../../dist/renderer/assets/index-OkLffH5G.js   1,156.25 kB │ gzip: 370.06 kB │ map: 5,323.85 kB
+✓ built in 7.86s
+../../dist/renderer/index.html                     0.53 kB │ gzip:   0.39 kB
+../../dist/renderer/assets/index-C5gI11eR.css     14.94 kB │ gzip:   3.32 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+```
+</details>
+</tool-use>
+
+---
+
+編譯成功！現在讓我提交：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "feat: 改進 PDF 文本提取，保留換行符和段落結構
+
+- 使用 Y 坐標檢測換行，保留文檔結構
+- 添加詳細的調試日誌輸出
+- 輸出提取的文本前 500 字符和前 10 行
+- 幫助診斷 PDF 解析問題"; git push</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "feat: 改進 PDF 文本提取，保留換行符和段落結構
+
+- 使用 Y 坐標檢測換行，保留文檔結構
+- 添加詳細的調試日誌輸出
+- 輸出提取的文本前 500 字符和前 10 行
+- 幫助診斷 PDF 解析問題"; git push
+```
+
+```
+[main bc91ac8] feat: 改進 PDF 文本提取，保留換行符和段落結構
+ 2 files changed, 520 insertions(+), 3 deletions(-)
+To https://github.com/peterRD5113/demo.git
+   51e090a..bc91ac8  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+完成！✅ PDF 解析已經改進！
+
+## 🔧 改進內容
+
+### PDF 文本提取優化
+- **保留換行符**：使用 Y 坐標檢測行與行之間的距離
+- **保留段落結構**：當 Y 坐標變化超過 5 個單位時，插入換行符
+- **添加調試日誌**：
+  - 輸出提取的文本長度
+  - 輸出前 500 字符（查看文本內容）
+  - 輸出總行數
+  - 輸出前 10 行（查看行分割效果）
+
+## 🎯 測試步驟
+
+現在請您：
+
+1. **重新啟動應用程式**
+2. **上傳 PDF 文件**
+3. **查看控制台日誌**（F12），應該會看到：
+   ```
+   PDF 頁數: 5
+   PDF 文本提取完成，長度: 2144
+   PDF 文本前 500 字符: [文本內容]
+   PDF 共 XX 行文本
+   前 10 行: [前 10 行內容]
+   解析完成，共提取 XX 個條款
+   ```
+
+4. **如果還是沒有條款**：
+   - 請複製控制台中的"PDF 文本前 500 字符"和"前 10 行"的內容
+   - 告訴我，我會根據實際的文本格式調整條款識別邏輯
+
+PDF 解析的關鍵是條款識別模式。目前的模式是識別"第X條"、"第X款"等格式。如果您的 PDF 使用不同的格式（例如"1."、"1.1"等），我需要調整識別邏輯。
+
+---
+
+_**User**_
+
+為什麼你常常編寫時會出現亂碼把問題跟解決方式記錄下來到rule 這樣以後就不要再一直犯同樣的錯
+
+---
+
+_**Agent (model gpt-5.3-codex, mode Agent)**_
+
+您說得對！讓我分析問題並記錄到規則中。
+
+## 問題分析
+
+亂碼出現的原因：
+1. **文件編碼不一致**：某些文件被保存為 Big5 或其他編碼，而不是 UTF-8
+2. **工具鏈問題**：使用 Shell 命令或某些工具讀寫文件時，沒有明確指定 UTF-8 編碼
+3. **字符串替換問題**：使用 PowerShell 的 `-replace` 操作時，可能會破壞編碼
+
+## 解決方案
+
+讓我創建一個規則文件來記錄這個問題：
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:\Users\fortu\Desktop\Project\Demo\.cursor\rules\encoding-handling.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+完成！我已經創建了編碼處理規則文件。讓我提交這個規則：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "docs: 添加編碼問題處理規則
+
+- 記錄中文亂碼問題的根本原因
+- 提供最佳實踐和解決方案
+- 明確推薦使用 Write 工具而非 Shell 命令
+- 避免未來重複犯同樣的錯誤"; git push</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "docs: 添加編碼問題處理規則
+
+- 記錄中文亂碼問題的根本原因
+- 提供最佳實踐和解決方案
+- 明確推薦使用 Write 工具而非 Shell 命令
+- 避免未來重複犯同樣的錯誤"; git push
+```
+
+```
+[main 7cb19fb] docs: 添加編碼問題處理規則
+ 1 file changed, 125 insertions(+)
+ create mode 100644 .cursor/rules/encoding-handling.md
+To https://github.com/peterRD5113/demo.git
+   bc91ac8..7cb19fb  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+完成！✅ 我已經創建並提交了編碼處理規則。
+
+## 📋 規則摘要
+
+### 核心原則
+1. **優先使用 Write 工具**重寫整個文件（自動 UTF-8）
+2. **避免使用 Shell 命令**進行文本替換
+3. **StrReplace 失敗 = 立即切換到 Write 工具**
+4. **發現亂碼 = 立即 git checkout 恢復**
+
+### 為什麼會出現亂碼
+- PowerShell 的 `-replace` 操作會破壞 UTF-8 編碼
+- 沒有明確指定 `-Encoding UTF8` 參數
+- 文件原本就有編碼問題
+
+### 正確的工作流程
+```
+Read 讀取文件 → 檢查亂碼 → 修改內容 → Write 重寫 → 編譯測試 → 提交
+```
+
+這個規則文件已經保存在 `.cursor/rules/encoding-handling.md`，以後遇到類似問題時可以參考，避免重複犯錯。
+
+現在請測試 PDF 解析功能，看看是否能正確提取條款！
+
+---
+
+_**User**_
+
+@MANUAL_TESTING_CHECKLIST_REVISED.md (79-80)  目前都可以讀取了, 但是這個沒看到 你思考一下要如何做？
+
+---
+
+_**Agent (model gpt-5.3-codex, mode Agent)**_
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\pages\DocumentReviewPage.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+

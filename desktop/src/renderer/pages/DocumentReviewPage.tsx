@@ -127,7 +127,7 @@ const DocumentReviewPage: React.FC = () => {
       console.log('Loading risks for documentId:', documentId);
 
       const response = await window.electronAPI.risk.list(
-        parseInt(documentId),  // 使用 documentId 而不是 projectId
+        parseInt(documentId),
         userId,
         1,
         100
@@ -157,7 +157,6 @@ const DocumentReviewPage: React.FC = () => {
   };
 
   const handleClauseUpdate = () => {
-    // 重新加載條款
     loadClauses();
   };
 
@@ -183,7 +182,6 @@ const DocumentReviewPage: React.FC = () => {
     const clauseRisks = risksByClause.get(clauseId);
     if (!clauseRisks || clauseRisks.length === 0) return null;
 
-    // 返回最高風險等級
     if (clauseRisks.some(r => r.risk_level === 'high')) return 'high';
     if (clauseRisks.some(r => r.risk_level === 'medium')) return 'medium';
     return 'low';
@@ -192,8 +190,6 @@ const DocumentReviewPage: React.FC = () => {
   const getRiskDescription = (clauseId: number): string | null => {
     const clauseRisks = risksByClause.get(clauseId);
     if (!clauseRisks || clauseRisks.length === 0) return null;
-
-    // 返回第一個風險的描述
     return clauseRisks[0].description;
   };
 
@@ -224,7 +220,6 @@ const DocumentReviewPage: React.FC = () => {
     );
   }
 
-  // 統計風險
   const highRiskCount = risks.filter(r => r.risk_level === 'high').length;
   const mediumRiskCount = risks.filter(r => r.risk_level === 'medium').length;
   const lowRiskCount = risks.filter(r => r.risk_level === 'low').length;
@@ -272,7 +267,6 @@ const DocumentReviewPage: React.FC = () => {
             <Text>{new Date(document.created_at).toLocaleString()}</Text>
           </div>
 
-          {/* 風險統計 */}
           {risks.length > 0 && (
             <div style={{ marginBottom: 24, padding: '16px', backgroundColor: '#fafafa', borderRadius: '4px' }}>
               <Text strong style={{ marginRight: 16 }}>
@@ -282,6 +276,57 @@ const DocumentReviewPage: React.FC = () => {
               <Tag color="orange">中風險: {mediumRiskCount}</Tag>
               <Tag color="blue">低風險: {lowRiskCount}</Tag>
               <Tag>總計: {risks.length}</Tag>
+            </div>
+          )}
+
+          <Divider />
+
+          {clauses.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <Title level={4}>目錄</Title>
+              <div style={{ 
+                padding: '16px', 
+                backgroundColor: '#fafafa', 
+                borderRadius: '4px',
+                maxHeight: '300px',
+                overflowY: 'auto'
+              }}>
+                {clauses
+                  .filter(clause => clause.level === 1)
+                  .map((clause) => (
+                    <div 
+                      key={clause.id}
+                      style={{ 
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        borderRadius: '4px',
+                        marginBottom: '4px',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e6f7ff'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      onClick={() => {
+                        const element = document.getElementById(`clause-${clause.id}`);
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          element.style.backgroundColor = '#e6f7ff';
+                          setTimeout(() => {
+                            element.style.backgroundColor = '';
+                          }, 2000);
+                        }
+                      }}
+                    >
+                      <Text strong style={{ color: '#1890ff' }}>
+                        第 {clause.clause_number} 條
+                      </Text>
+                      {clause.title && (
+                        <Text style={{ marginLeft: 8 }}>
+                          {clause.title}
+                        </Text>
+                      )}
+                    </div>
+                  ))}
+              </div>
             </div>
           )}
 
@@ -309,18 +354,26 @@ const DocumentReviewPage: React.FC = () => {
                   const riskDescription = getRiskDescription(clause.id);
                   
                   return (
-                    <ClauseItem
+                    <div 
                       key={clause.id}
-                      clause={{
-                        ...clause,
-                        risk_level: riskLevel,
-                        risk_description: riskDescription,
-                        annotation: null
+                      id={`clause-${clause.id}`}
+                      style={{ 
+                        transition: 'background-color 0.3s',
+                        borderRadius: '4px'
                       }}
-                      onClick={() => handleClauseClick(clause.id)}
-                      onUpdate={handleClauseUpdate}
-                      editable={true}
-                    />
+                    >
+                      <ClauseItem
+                        clause={{
+                          ...clause,
+                          risk_level: riskLevel,
+                          risk_description: riskDescription,
+                          annotation: null
+                        }}
+                        onClick={() => handleClauseClick(clause.id)}
+                        onUpdate={handleClauseUpdate}
+                        editable={true}
+                      />
+                    </div>
                   );
                 })}
               </div>
@@ -329,7 +382,6 @@ const DocumentReviewPage: React.FC = () => {
         </Card>
       </Content>
 
-      {/* 註解面板 */}
       {selectedClauseId && (
         <AnnotationPanel
           clauseId={selectedClauseId}
@@ -338,7 +390,6 @@ const DocumentReviewPage: React.FC = () => {
         />
       )}
 
-      {/* 導出模態框 */}
       {document && (
         <ExportModal
           visible={showExportModal}
@@ -352,4 +403,3 @@ const DocumentReviewPage: React.FC = () => {
 };
 
 export default DocumentReviewPage;
-
