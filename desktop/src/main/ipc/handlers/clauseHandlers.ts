@@ -86,36 +86,44 @@ class ClauseHandlers {
       CLAUSE_CHANNELS.UPDATE,
       async (_event: IpcMainInvokeEvent, request: UpdateClauseRequest): Promise<IPCResponse<void>> => {
         try {
-          let result;
+          let contentResult;
+          let titleResult;
           
           // 如果提供了內容，更新內容
           if (request.content !== undefined) {
-            result = await clauseService.updateClauseContent(
+            contentResult = await clauseService.updateClauseContent(
               request.clauseId,
               request.userId,
               request.content
             );
+            
+            if (!contentResult || !contentResult.success) {
+              return {
+                success: false,
+                message: contentResult?.message || '更新條款內容失敗'
+              };
+            }
           }
           
           // 如果提供了標題，更新標題
           if (request.title !== undefined) {
-            result = await clauseService.updateClauseTitle(
+            titleResult = await clauseService.updateClauseTitle(
               request.clauseId,
               request.userId,
               request.title
             );
+            
+            if (!titleResult || !titleResult.success) {
+              return {
+                success: false,
+                message: titleResult?.message || '更新條款標題失敗'
+              };
+            }
           }
           
-          if (result && result.success) {
-            return {
-              success: true,
-              message: '更新條款成功'
-            };
-          }
-
           return {
-            success: false,
-            message: result?.message || '更新條款失敗'
+            success: true,
+            message: '更新條款成功'
           };
         } catch (error) {
           console.error('更新條款失敗:', error);

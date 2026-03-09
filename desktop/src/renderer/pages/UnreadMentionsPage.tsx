@@ -56,7 +56,7 @@ const UnreadMentionsPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const result = await window.api.annotation.getMentions(
+      const result = await window.electronAPI.annotation.getMentions(
         currentUser.id,
         currentProject.id
       );
@@ -73,11 +73,11 @@ const UnreadMentionsPage: React.FC = () => {
         
         setMentions(filteredMentions);
       } else {
-        message.error(result.message || '載入待確認清單失敗');
+        message.error(result.message || '載入待確認提及失敗');
       }
     } catch (error) {
-      console.error('載入待確認清單失敗:', error);
-      message.error('載入待確認清單失敗');
+      console.error('載入待確認提及失敗', error);
+      message.error('載入待確認提及失敗');
     } finally {
       setLoading(false);
     }
@@ -85,7 +85,7 @@ const UnreadMentionsPage: React.FC = () => {
 
   const handleMarkAsRead = async (mentionId: number) => {
     try {
-      const result = await window.api.annotation.markMentionRead(
+      const result = await window.electronAPI.annotation.markMentionRead(
         mentionId,
         currentUser.id
       );
@@ -94,16 +94,16 @@ const UnreadMentionsPage: React.FC = () => {
         message.success('已標記為已讀');
         loadMentions();
       } else {
-        message.error(result.message || '操作失敗');
+        message.error(result.message || '標記失敗');
       }
     } catch (error) {
       console.error('標記失敗:', error);
-      message.error('操作失敗');
+      message.error('標記失敗');
     }
   };
 
   const handleViewClause = (mention: Mention) => {
-    // 跳轉到文檔審閱頁面，並打開對應條款的批註面板
+    // 跳轉到文檔審閱頁面並打開該條款的註解面板
     navigate(`/project/${mention.project_id}/document/${mention.document_id}`);
     
     // 標記為已讀
@@ -126,8 +126,8 @@ const UnreadMentionsPage: React.FC = () => {
     const tagMap = {
       comment: { color: 'blue', text: '評論' },
       suggestion: { color: 'green', text: '建議' },
-      question: { color: 'orange', text: '疑問' },
-      issue: { color: 'red', text: '問題' },
+      question: { color: 'orange', text: '問題' },
+      issue: { color: 'red', text: '議題' },
     };
     const config = tagMap[type] || tagMap.comment;
     return <Tag color={config.color} icon={getTypeIcon(type)}>{config.text}</Tag>;
@@ -169,7 +169,7 @@ const UnreadMentionsPage: React.FC = () => {
         <Card>
           <div className="mentions-header">
             <Title level={3}>
-              <BellOutlined /> 待確認清單
+              <BellOutlined /> 待確認提及
               {pendingCount > 0 && (
                 <Badge count={pendingCount} style={{ marginLeft: 12 }} />
               )}
@@ -268,7 +268,7 @@ const UnreadMentionsPage: React.FC = () => {
                   
                   <div className="mention-content-section">
                     <div className="mention-annotation">
-                      <Text strong>批註內容：</Text>
+                      <Text strong>註解內容：</Text>
                       <div className="mention-text">
                         {renderMentionContent(mention.annotation_content)}
                       </div>

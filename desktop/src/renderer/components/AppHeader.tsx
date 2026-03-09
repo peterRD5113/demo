@@ -26,7 +26,7 @@ const AppHeader: React.FC = () => {
     if (!currentUser || !currentProject) return;
 
     try {
-      const result = await window.api.annotation.getMentions(
+      const result = await window.electronAPI.annotation.getMentions(
         currentUser.id,
         currentProject.id
       );
@@ -36,7 +36,7 @@ const AppHeader: React.FC = () => {
         setUnreadCount(pending.length);
       }
     } catch (error) {
-      console.error('載入未讀數量失敗:', error);
+      console.error('載入未讀提及數量失敗:', error);
     }
   };
 
@@ -87,7 +87,7 @@ const AppHeader: React.FC = () => {
       icon: <BellOutlined />,
       label: (
         <Badge count={unreadCount} offset={[10, 0]}>
-          <span>待確認清單</span>
+          <span>待確認提及</span>
         </Badge>
       ),
       onClick: () => navigate('/mentions'),

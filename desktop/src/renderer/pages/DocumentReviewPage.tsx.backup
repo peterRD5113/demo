@@ -1,0 +1,583 @@
+// @ts-nocheck
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+
+type RiskLevel = 'high' | 'medium' | 'low' | 'none';
+
+interface Clause {
+  id: number;
+  clause_number: string;
+  title: string;
+  content: string;
+  risk_level: RiskLevel;
+  risk_description?: string;
+  suggestion?: string;
+}
+
+interface Document {
+  id: number;
+  filename: string;
+  created_at: string;
+  clauses?: Clause[];
+}
+
+const DocumentReviewPage: React.FC = () => {
+  const { documentId } = useParams<{ documentId: string }>();
+  const navigate = useNavigate();
+  const { token } = useAuth();
+  const [document, setDocument] = useState<Document | null>(null);
+  const [clauses, setClauses] = useState<Clause[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadDocument = async () => {
+      if (!documentId || !token) {
+        setError('文件 ID 不存在或未登入');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        const userId = tokenPayload.userId;
+
+        // 獲取文檔信息
+        const docResponse = await window.electronAPI.document.get(
+          parseInt(documentId),
+          userId
+        );
+
+        if (!docResponse.success || !docResponse.data) {
+          setError('找不到文件');
+          setLoading(false);
+          return;
+        }
+
+        setDocument(docResponse.data);
+
+        // 獲取條文列表
+        const clausesResponse = await window.electronAPI.clause.getByDocument(
+          parseInt(documentId),
+          userId
+        );
+
+        if (clausesResponse.success && clausesResponse.data) {
+          setClauses(clausesResponse.data);
+        }
+      } catch (err) {
+        setError('載入文件失敗');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDocument();
+  }, [documentId, token]);
+
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  const handleExport = () => {
+    if (!document) return;
+    
+    const content = generateExportContent(document, clauses);
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = window.document.createElement('a');
+    a.href = url;
+    a.download = `${document.filename}_審查報告.txt`;
+    window.document.body.appendChild(a);
+    a.click();
+    window.document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const generateExportContent = (doc: Document, clauseList: Clause[]): string => {
+    let content = `文件審查報告\n`;
+    content += `================\n\n`;
+    content += `文件名稱: ${doc.filename}\n`;
+    content += `上傳時間: ${new Date(doc.created_at).toLocaleString('zh-TW')}\n`;
+    content += `審查時間: ${new Date().toLocaleString('zh-TW')}\n\n`;
+    
+    content += `風險統計\n`;
+    content += `--------\n`;
+    const stats = getRiskStatistics(clauseList);
+    content += `高風險: ${stats.high} 條\n`;
+    content += `中風險: ${stats.medium} 條\n`;
+    content += `低風險: ${stats.low} 條\n`;
+    content += `無風險: ${stats.none} 條\n\n`;
+    
+    content += `條文詳情\n`;
+    content += `========\n\n`;
+    
+    clauseList.forEach((clause) => {
+      content += `${clause.clause_number}. ${clause.title}\n`;
+      content += `風險等級: ${getRiskLevelText(clause.risk_level)}\n`;
+      content += `內容: ${clause.content}\n`;
+      if (clause.risk_description) {
+        content += `風險說明: ${clause.risk_description}\n`;
+      }
+      if (clause.suggestion) {
+        content += `建議: ${clause.suggestion}\n`;
+      }
+      content += `\n`;
+    });
+    
+    return content;
+  };
+
+  const getRiskLevelText = (level: RiskLevel): string => {
+    const map: Record<RiskLevel, string> = {
+      high: '高風險',
+      medium: '中風險',
+      low: '低風險',
+      none: '無風險'
+    };
+    return map[level];
+  };
+
+  const getRiskStatistics = (clauseList: Clause[]) => {
+    return clauseList.reduce((acc, clause) => {
+      acc[clause.risk_level]++;
+      return acc;
+    }, { high: 0, medium: 0, low: 0, none: 0 } as Record<RiskLevel, number>);
+  };
+
+  const getRiskColor = (level: RiskLevel): string => {
+    const colors: Record<RiskLevel, string> = {
+      high: '#ef4444',
+      medium: '#f59e0b',
+      low: '#3b82f6',
+      none: '#10b981'
+    };
+    return colors[level];
+  };
+
+  const scrollToClause = (clauseNumber: string) => {
+    const element = window.document.getElementById(`clause-${clauseNumber}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontFamily: 'Microsoft JhengHei, sans-serif'
+      }}>
+        載入中...
+      </div>
+    );
+  }
+
+  if (error || !document) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontFamily: 'Microsoft JhengHei, sans-serif'
+      }}>
+        <div style={{ fontSize: '18px', color: '#ef4444', marginBottom: '20px' }}>
+          {error || '找不到文件'}
+        </div>
+        <button
+          onClick={handleBack}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontFamily: 'Microsoft JhengHei, sans-serif'
+          }}
+        >
+          返回
+        </button>
+      </div>
+    );
+  }
+
+  const stats = getRiskStatistics(clauses);
+
+  return (
+    <div style={{ 
+      display: 'flex',
+      height: '100vh',
+      fontFamily: 'Microsoft JhengHei, sans-serif',
+      backgroundColor: '#f9fafb'
+    }}>
+      {/* Left Sidebar - Table of Contents */}
+      <div style={{
+        width: '280px',
+        backgroundColor: 'white',
+        borderRight: '1px solid #e5e7eb',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+        overflowY: 'auto'
+      }}>
+        <div style={{
+          padding: '20px',
+          borderBottom: '1px solid #e5e7eb',
+          backgroundColor: '#f9fafb'
+        }}>
+          <h3 style={{ 
+            margin: 0, 
+            fontSize: '16px', 
+            fontWeight: 600,
+            color: '#111827'
+          }}>
+            目錄
+          </h3>
+        </div>
+        
+        <div style={{ padding: '12px' }}>
+          {clauses.map((clause) => (
+            <div
+              key={clause.id}
+              onClick={() => scrollToClause(clause.clause_number)}
+              style={{
+                padding: '10px 12px',
+                marginBottom: '4px',
+                cursor: 'pointer',
+                borderRadius: '6px',
+                transition: 'all 0.2s',
+                backgroundColor: 'transparent',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '8px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <div style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                backgroundColor: getRiskColor(clause.risk_level),
+                marginTop: '6px',
+                flexShrink: 0
+              }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  color: '#374151',
+                  marginBottom: '2px'
+                }}>
+                  {clause.clause_number}
+                </div>
+                <div style={{
+                  fontSize: '12px',
+                  color: '#6b7280',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {clause.title}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={{ 
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}>
+        {/* Header */}
+        <div style={{
+          backgroundColor: 'white',
+          borderBottom: '1px solid #e5e7eb',
+          padding: '20px 32px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div>
+            <h1 style={{ 
+              margin: '0 0 8px 0', 
+              fontSize: '24px', 
+              fontWeight: 600,
+              color: '#111827'
+            }}>
+              {document.filename}
+            </h1>
+            <p style={{ 
+              margin: 0, 
+              fontSize: '14px', 
+              color: '#6b7280'
+            }}>
+              上傳時間: {new Date(document.created_at).toLocaleString('zh-TW')}
+            </p>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={handleExport}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 500,
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#059669';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#10b981';
+              }}
+            >
+              匯出報告
+            </button>
+            <button
+              onClick={handleBack}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#6b7280',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 500,
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#4b5563';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#6b7280';
+              }}
+            >
+              返回
+            </button>
+          </div>
+        </div>
+
+        {/* Risk Statistics */}
+        <div style={{
+          padding: '24px 32px',
+          backgroundColor: 'white',
+          borderBottom: '1px solid #e5e7eb'
+        }}>
+          <h2 style={{ 
+            margin: '0 0 16px 0', 
+            fontSize: '18px', 
+            fontWeight: 600,
+            color: '#111827'
+          }}>
+            風險統計
+          </h2>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(4, 1fr)', 
+            gap: '16px'
+          }}>
+            <div style={{
+              padding: '16px',
+              backgroundColor: '#fef2f2',
+              borderRadius: '8px',
+              border: '1px solid #fecaca'
+            }}>
+              <div style={{ fontSize: '14px', color: '#991b1b', marginBottom: '4px' }}>
+                高風險
+              </div>
+              <div style={{ fontSize: '28px', fontWeight: 700, color: '#dc2626' }}>
+                {stats.high}
+              </div>
+            </div>
+            
+            <div style={{
+              padding: '16px',
+              backgroundColor: '#fffbeb',
+              borderRadius: '8px',
+              border: '1px solid #fde68a'
+            }}>
+              <div style={{ fontSize: '14px', color: '#92400e', marginBottom: '4px' }}>
+                中風險
+              </div>
+              <div style={{ fontSize: '28px', fontWeight: 700, color: '#f59e0b' }}>
+                {stats.medium}
+              </div>
+            </div>
+            
+            <div style={{
+              padding: '16px',
+              backgroundColor: '#eff6ff',
+              borderRadius: '8px',
+              border: '1px solid #bfdbfe'
+            }}>
+              <div style={{ fontSize: '14px', color: '#1e40af', marginBottom: '4px' }}>
+                低風險
+              </div>
+              <div style={{ fontSize: '28px', fontWeight: 700, color: '#3b82f6' }}>
+                {stats.low}
+              </div>
+            </div>
+            
+            <div style={{
+              padding: '16px',
+              backgroundColor: '#f0fdf4',
+              borderRadius: '8px',
+              border: '1px solid #bbf7d0'
+            }}>
+              <div style={{ fontSize: '14px', color: '#166534', marginBottom: '4px' }}>
+                無風險
+              </div>
+              <div style={{ fontSize: '28px', fontWeight: 700, color: '#10b981' }}>
+                {stats.none}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Clauses List */}
+        <div style={{ 
+          flex: 1,
+          overflowY: 'auto',
+          padding: '24px 32px'
+        }}>
+          <h2 style={{ 
+            margin: '0 0 20px 0', 
+            fontSize: '18px', 
+            fontWeight: 600,
+            color: '#111827'
+          }}>
+            條文詳情
+          </h2>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {clauses.map((clause) => (
+              <div
+                key={clause.id}
+                id={`clause-${clause.clause_number}`}
+                style={{
+                  backgroundColor: 'white',
+                  borderRadius: '8px',
+                  padding: '20px',
+                  border: '1px solid #e5e7eb',
+                  boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                }}
+              >
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px',
+                  marginBottom: '12px'
+                }}>
+                  <div style={{
+                    padding: '4px 12px',
+                    backgroundColor: getRiskColor(clause.risk_level),
+                    color: 'white',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 600
+                  }}>
+                    {getRiskLevelText(clause.risk_level)}
+                  </div>
+                  <h3 style={{ 
+                    margin: 0, 
+                    fontSize: '16px', 
+                    fontWeight: 600,
+                    color: '#111827'
+                  }}>
+                    {clause.clause_number}. {clause.title}
+                  </h3>
+                </div>
+                
+                <div style={{
+                  padding: '12px',
+                  backgroundColor: '#f9fafb',
+                  borderRadius: '6px',
+                  marginBottom: '12px'
+                }}>
+                  <p style={{ 
+                    margin: 0, 
+                    fontSize: '14px', 
+                    lineHeight: '1.6',
+                    color: '#374151'
+                  }}>
+                    {clause.content}
+                  </p>
+                </div>
+                
+                {clause.risk_description && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ 
+                      fontSize: '13px', 
+                      fontWeight: 600, 
+                      color: '#ef4444',
+                      marginBottom: '6px'
+                    }}>
+                      風險說明:
+                    </div>
+                    <p style={{ 
+                      margin: 0, 
+                      fontSize: '14px', 
+                      lineHeight: '1.6',
+                      color: '#6b7280'
+                    }}>
+                      {clause.risk_description}
+                    </p>
+                  </div>
+                )}
+                
+                {clause.suggestion && (
+                  <div>
+                    <div style={{ 
+                      fontSize: '13px', 
+                      fontWeight: 600, 
+                      color: '#10b981',
+                      marginBottom: '6px'
+                    }}>
+                      建議:
+                    </div>
+                    <p style={{ 
+                      margin: 0, 
+                      fontSize: '14px', 
+                      lineHeight: '1.6',
+                      color: '#6b7280'
+                    }}>
+                      {clause.suggestion}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DocumentReviewPage;

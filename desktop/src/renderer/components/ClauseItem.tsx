@@ -98,13 +98,20 @@ const ClauseItem: React.FC<ClauseItemProps> = ({
 
     setIsSaving(true);
     try {
-      const result = await window.api.clause.update(
+      // 构建更新数据对象
+      const updateData: { content: string; title?: string } = {
+        content: editedContent
+      };
+      
+      // 只有当标题有值时才包含 title 字段
+      if (editedTitle.trim()) {
+        updateData.title = editedTitle.trim();
+      }
+      
+      const result = await window.electronAPI.clause.update(
         clause.id,
         currentUser.id,
-        {
-          content: editedContent,
-          title: editedTitle || null
-        }
+        updateData
       );
 
       if (result.success) {

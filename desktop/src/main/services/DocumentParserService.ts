@@ -13,7 +13,7 @@ interface ParsedClause {
   clauseNumber: string;    // "1", "1.1", "1.2.1"
   title: string | null;    // 條款標題
   content: string;         // 條款內容
-  level: number;           // 層級 (1, 2, 3)
+  level: number;           // 層級 (-1: 文档标题, 0: 章节, 1: 条款, 2: 款, 3: 项)
   parentId: number | null; // 父條款 ID（數據庫 ID）
   orderIndex: number;      // 排序索引
 }
@@ -183,10 +183,10 @@ class DocumentParserService {
       const clauseInfo = this.detectClauseTitle(line);
 
       if (clauseInfo) {
-        // 保存之前累積的內容
-        if (currentContent.length > 0 && currentLevel > 0) {
+        // 保存之前累積的內容（包括文档标题和章節）
+        if (currentLevel >= -1 && (currentContent.length > 0 || currentLevel <= 0)) {
           clauses.push({
-            clauseNumber: this.generateClauseNumber(state, currentLevel),
+            clauseNumber: currentLevel <= 0 ? '' : this.generateClauseNumber(state, currentLevel),
             title: currentTitle,
             content: currentContent.join('\n'),
             level: currentLevel,
@@ -199,17 +199,21 @@ class DocumentParserService {
         // 更新狀態
         currentTitle = clauseInfo.title;
         currentLevel = clauseInfo.level;
-        this.updateNumberingState(state, clauseInfo.level);
+        
+        // 只有非章节和非文档标题才更新编号
+        if (!clauseInfo.isChapter && !clauseInfo.isDocTitle && clauseInfo.level > 0) {
+          this.updateNumberingState(state, clauseInfo.level);
+        }
       } else if (currentLevel > 0) {
         // 累積內容
         currentContent.push(line);
       }
     }
 
-    // 保存最後一個條款
-    if (currentContent.length > 0 && currentLevel > 0) {
+    // 保存最後一個條款（包括文档标题和章節）
+    if (currentLevel >= -1 && (currentContent.length > 0 || currentLevel <= 0)) {
       clauses.push({
-        clauseNumber: this.generateClauseNumber(state, currentLevel),
+        clauseNumber: currentLevel <= 0 ? '' : this.generateClauseNumber(state, currentLevel),
         title: currentTitle,
         content: currentContent.join('\n'),
         level: currentLevel,
@@ -227,7 +231,27 @@ class DocumentParserService {
    * 檢測條款標題
    * 識別 "第X條"、"第X款"、"第X項" 等格式
    */
-  private detectClauseTitle(line: string): { level: number; title: string } | null {
+  private detectClauseTitle(line: string): { level: number; title: string; isChapter?: boolean; isDocTitle?: boolean } | null {
+    // 匹配文档标题 "# 标题" (单独的一级标题，不含"第X章"或"第X條")
+    const docTitleMatch = line.match(/^#\s+([^第].+)$/);
+    if (docTitleMatch) {
+      return {
+        level: -1,
+        title: docTitleMatch[1],
+        isDocTitle: true
+      };
+    }
+
+    // 匹配章節標題 "第X章" (可以有或没有 #)
+    const chapterMatch = line.match(/^#{0,2}\s*第\s*([一二三四五六七八九十百]+)\s*章\s+(.+)$/);
+    if (chapterMatch) {
+      return {
+        level: 0,
+        title: line.replace(/^#{0,2}\s*/, ''),
+        isChapter: true
+      };
+    }
+
     // 匹配 "第X條" 或 "### 第X條"
     const level1Match = line.match(/^#{0,3}\s*第\s*(\d+|[一二三四五六七八九十百]+)\s*條\s+(.+)$/);
     if (level1Match) {
@@ -243,15 +267,6 @@ class DocumentParserService {
       return {
         level: 2,
         title: line.replace(/^#{0,3}\s*/, '')
-      };
-    }
-
-    // 匹配章節標題 "## 第X章"
-    const chapterMatch = line.match(/^#{1,2}\s*第\s*([一二三四五六七八九十百]+)\s*章\s+(.+)$/);
-    if (chapterMatch) {
-      return {
-        level: 1,
-        title: line.replace(/^#{1,2}\s*/, '')
       };
     }
 
