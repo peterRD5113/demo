@@ -12,6 +12,8 @@ class AnnotationHandlers {
    * 註冊所有批註相關的 IPC 處理器
    */
   register(ipcMain: IpcMain): void {
+    console.log('Registering annotation IPC handlers...');
+    
     // 創建批註
     ipcMain.handle(
       ANNOTATION_CHANNELS.CREATE,
@@ -21,6 +23,7 @@ class AnnotationHandlers {
         content: string;
         type?: 'comment' | 'suggestion' | 'question' | 'issue';
       }): Promise<IPCResponse<{ annotationId: number }>> => {
+        console.log('IPC handler received CREATE request:', request);
         try {
           const result = await annotationService.createAnnotation(
             request.clauseId,
@@ -28,6 +31,8 @@ class AnnotationHandlers {
             request.content,
             request.type
           );
+          
+          console.log('Service returned result:', result);
           
           if (result.success && result.annotationId) {
             return {
@@ -50,6 +55,8 @@ class AnnotationHandlers {
         }
       }
     );
+
+    console.log('Annotation CREATE handler registered for channel:', ANNOTATION_CHANNELS.CREATE);
 
     // 獲取條款的所有批註
     ipcMain.handle(
@@ -254,6 +261,8 @@ class AnnotationHandlers {
         }
       }
     );
+    
+    console.log('All annotation IPC handlers registered');
   }
 }
 
