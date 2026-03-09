@@ -259,47 +259,47 @@ function initializeDefaultData(): void {
   const adminExists = result.length > 0 && result[0].values.length > 0;
 
   if (!adminExists) {
-    // �Ыعw�]�޲z���b���]�K�X: Admin@123�^
+    // 創建默認管理員賬號（密碼: Admin@123）
     const passwordHash = bcrypt.hashSync('Admin@123', 10);
 
     db.run(
       `INSERT INTO users (username, password_hash, display_name, role)
        VALUES (?, ?, ?, ?)`,
-      ['admin', passwordHash, '�t�κ޲z��', 'admin']
+      ['admin', passwordHash, '系統管理員', 'admin']
     );
 
     console.log('Default admin user created (username: admin, password: Admin@123)');
   }
 
-  // �ˬd�O�_�w�����q�Τ� user1
+  // 檢查是否已有普通用戶 user1
   const user1Result = db.exec('SELECT id FROM users WHERE username = ?', ['user1']);
   const user1Exists = user1Result.length > 0 && user1Result[0].values.length > 0;
 
   if (!user1Exists) {
-    // �Ыش��մ��q�Τ�]�K�X: User@123�^
+    // 創建測試普通用戶（密碼: User@123）
     const passwordHash = bcrypt.hashSync('User@123', 10);
 
     db.run(
       `INSERT INTO users (username, password_hash, display_name, role)
        VALUES (?, ?, ?, ?)`,
-      ['user1', passwordHash, '���եΤ�', 'user']
+      ['user1', passwordHash, '普通用戶', 'user']
     );
 
     console.log('Default user1 created (username: user1, password: User@123)');
   }
 
-  // �ˬd�O�_�w�����եΤ� test
+  // 檢查是否已有測試用戶 test
   const testResult = db.exec('SELECT id FROM users WHERE username = ?', ['test']);
   const testExists = testResult.length > 0 && testResult[0].values.length > 0;
 
   if (!testExists) {
-    // �Ыش��եΤ�]�K�X: Test@123�^
+    // 創建測試用戶（密碼: Test@123）
     const passwordHash = bcrypt.hashSync('Test@123', 10);
 
     db.run(
       `INSERT INTO users (username, password_hash, display_name, role)
        VALUES (?, ?, ?, ?)`,
-      ['test', passwordHash, '���եΤ�', 'user']
+      ['test', passwordHash, '測試用戶', 'user']
     );
 
     console.log('Default test user created (username: test, password: Test@123)');
