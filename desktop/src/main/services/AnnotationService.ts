@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * Annotation Service
- * ?��??�註?��??�業?��?�?
+ * 處理備註相關的業務邏輯
  */
 
 import { 
@@ -17,15 +17,15 @@ import {
   validateEnum
 } from '@main/utils/validation';
 
-// ?�註類�?
+// 備註類型
 const ANNOTATION_TYPES = ['comment', 'suggestion', 'question', 'issue'] as const;
 type AnnotationType = typeof ANNOTATION_TYPES[number];
 
-// ?�註?�??
+// 備註狀態
 const ANNOTATION_STATUS = ['active', 'resolved', 'deleted'] as const;
 type AnnotationStatus = typeof ANNOTATION_STATUS[number];
 
-// ?�註?�口
+// 備註接口
 interface Annotation {
   id: number;
   clause_id: number;
@@ -37,7 +37,7 @@ interface Annotation {
   updated_at: string;
 }
 
-// Mention ?�口
+// Mention 接口
 interface Mention {
   id: number;
   annotation_id: number;
@@ -46,7 +46,7 @@ interface Mention {
   created_at: string;
 }
 
-// ?�註?�表?��?
+// 備註列表響應
 interface AnnotationListResponse {
   annotations: Annotation[];
   total: number;
@@ -54,7 +54,7 @@ interface AnnotationListResponse {
 
 class AnnotationService {
   /**
-   * ?�建?�註
+   * 創建備註
    */
   async createAnnotation(
     clauseId: number,
@@ -63,14 +63,27 @@ class AnnotationService {
     type: AnnotationType = 'comment'
   ): Promise<{ success: boolean; message: string; annotationId?: number }> {
     try {
-      // ?�數驗�?
+      // 調試日誌
+      console.log('AnnotationService.createAnnotation called with:', { 
+        clauseId, 
+        userId, 
+        content, 
+        type,
+        clauseIdType: typeof clauseId,
+        userIdType: typeof userId
+      });
+      
+      // 參數驗證
       validatePositiveInteger(clauseId, 'Clause ID');
       validatePositiveInteger(userId, 'User ID');
       validateRequiredString(content, 'Annotation content', 1, 2000);
       validateEnum(type, 'Annotation type', ANNOTATION_TYPES);
 
-      // 檢查條款?�否存在
+      console.log('Validation passed');
+
+      // 檢查條款是否存在
       const clause = clauseRepository.findById(clauseId);
+      console.log('Found clause:', clause);
       if (!clause) {
         return {
           success: false,
@@ -78,8 +91,9 @@ class AnnotationService {
         };
       }
 
-      // 檢查?��?權�?
+      // 檢查文檔權限
       const document = documentRepository.findById(clause.document_id);
+      console.log('Found document:', document);
       if (!document) {
         return {
           success: false,
@@ -87,7 +101,7 @@ class AnnotationService {
         };
       }
 
-      // 檢查?�目權�?
+      // 檢查項目權限
       if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
         return {
           success: false,
@@ -95,7 +109,9 @@ class AnnotationService {
         };
       }
 
-      // ?�建?�註
+      console.log('About to execute SQL with params:', { clauseId, userId, content, type });
+
+      // 創建備註
       const stmt = getDb().prepare(`
         INSERT INTO annotations (clause_id, user_id, content, type, status)
         VALUES (?, ?, ?, ?, 'active')
@@ -104,7 +120,9 @@ class AnnotationService {
       const result = stmt.run(clauseId, userId, content, type);
       const annotationId = result.lastInsertRowid as number;
 
-      // �?? @mentions
+      console.log('Annotation created with ID:', annotationId);
+
+      // 處理 @mentions
       const mentions = this.extractMentions(content);
       if (mentions.length > 0) {
         await this.createMentions(annotationId, mentions, document.project_id);
@@ -133,18 +151,18 @@ class AnnotationService {
   }
 
   /**
-   * ?��?條款?��??�批�?
+   * 獲取條款的所有批註
    */
   async getClauseAnnotations(
     clauseId: number,
     userId: number
   ): Promise<AnnotationListResponse> {
     try {
-      // ?�數驗�?
+      // 參數驗證
       validatePositiveInteger(clauseId, 'Clause ID');
       validatePositiveInteger(userId, 'User ID');
 
-      // 檢查條款?�否存在
+      // 檢查條款是否存在
       const clause = clauseRepository.findById(clauseId);
       if (!clause) {
         return {
@@ -153,7 +171,7 @@ class AnnotationService {
         };
       }
 
-      // 檢查?��?權�?
+      // 檢查文檔權限
       const document = documentRepository.findById(clause.document_id);
       if (!document) {
         return {
@@ -162,7 +180,7 @@ class AnnotationService {
         };
       }
 
-      // 檢查?�目權�?
+      // 檢查項目權限
       if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
         return {
           annotations: [],
@@ -170,7 +188,7 @@ class AnnotationService {
         };
       }
 
-      // ?��??�註?�表（�??�用?�信?��?
+      // 獲取備註列表（包含用戶信息）
       const stmt = getDb().prepare(`
         SELECT 
           a.*,
@@ -198,7 +216,7 @@ class AnnotationService {
   }
 
   /**
-   * ?�新?�註
+   * 更新備註
    */
   async updateAnnotation(
     annotationId: number,
@@ -206,12 +224,12 @@ class AnnotationService {
     content: string
   ): Promise<{ success: boolean; message: string }> {
     try {
-      // ?�數驗�?
+      // 參數驗證
       validatePositiveInteger(annotationId, 'Annotation ID');
       validatePositiveInteger(userId, 'User ID');
       validateRequiredString(content, 'Annotation content', 1, 2000);
 
-      // 檢查?�註?�否存在
+      // 檢查備註是否存在
       const stmt = getDb().prepare('SELECT * FROM annotations WHERE id = ?');
       const annotation = stmt.get(annotationId) as Annotation | undefined;
       
@@ -222,7 +240,7 @@ class AnnotationService {
         };
       }
 
-      // 檢查?�否?�批註�???
+      // 檢查是否為批註作者
       if (annotation.user_id !== userId) {
         return {
           success: false,
@@ -230,7 +248,7 @@ class AnnotationService {
         };
       }
 
-      // ?�新?�註
+      // 更新備註
       const updateStmt = getDb().prepare(`
         UPDATE annotations 
         SET content = ?, updated_at = CURRENT_TIMESTAMP
@@ -239,14 +257,14 @@ class AnnotationService {
       
       updateStmt.run(content, annotationId);
 
-      // ?�新�?? @mentions
+      // 更新處理 @mentions
       const mentions = this.extractMentions(content);
       if (mentions.length > 0) {
-        // ?�除?��? mentions
+        // 刪除舊的 mentions
         const deleteMentionsStmt = getDb().prepare('DELETE FROM mentions WHERE annotation_id = ?');
         deleteMentionsStmt.run(annotationId);
 
-        // ?�建?��? mentions
+        // 創建新的 mentions
         const clause = clauseRepository.findById(annotation.clause_id);
         if (clause) {
           const document = documentRepository.findById(clause.document_id);
@@ -278,18 +296,18 @@ class AnnotationService {
   }
 
   /**
-   * ?�除?�註（�??�除�?
+   * 刪除備註（軟刪除）
    */
   async deleteAnnotation(
     annotationId: number,
     userId: number
   ): Promise<{ success: boolean; message: string }> {
     try {
-      // ?�數驗�?
+      // 參數驗證
       validatePositiveInteger(annotationId, 'Annotation ID');
       validatePositiveInteger(userId, 'User ID');
 
-      // 檢查?�註?�否存在
+      // 檢查備註是否存在
       const stmt = getDb().prepare('SELECT * FROM annotations WHERE id = ?');
       const annotation = stmt.get(annotationId) as Annotation | undefined;
       
@@ -300,7 +318,7 @@ class AnnotationService {
         };
       }
 
-      // 檢查?�否?�批註�???
+      // 檢查是否為批註作者
       if (annotation.user_id !== userId) {
         return {
           success: false,
@@ -308,7 +326,7 @@ class AnnotationService {
         };
       }
 
-      // 軟刪?�批�?
+      // 軟刪除批註
       const updateStmt = getDb().prepare(`
         UPDATE annotations 
         SET status = 'deleted', updated_at = CURRENT_TIMESTAMP
@@ -339,18 +357,18 @@ class AnnotationService {
   }
 
   /**
-   * �?��?�註
+   * 解決備註
    */
   async resolveAnnotation(
     annotationId: number,
     userId: number
   ): Promise<{ success: boolean; message: string }> {
     try {
-      // ?�數驗�?
+      // 參數驗證
       validatePositiveInteger(annotationId, 'Annotation ID');
       validatePositiveInteger(userId, 'User ID');
 
-      // 檢查?�註?�否存在
+      // 檢查備註是否存在
       const stmt = getDb().prepare('SELECT * FROM annotations WHERE id = ?');
       const annotation = stmt.get(annotationId) as Annotation | undefined;
       
@@ -361,7 +379,7 @@ class AnnotationService {
         };
       }
 
-      // ?�新?�?�為 resolved
+      // 更新狀態為 resolved
       const updateStmt = getDb().prepare(`
         UPDATE annotations 
         SET status = 'resolved', updated_at = CURRENT_TIMESTAMP
@@ -370,7 +388,7 @@ class AnnotationService {
       
       updateStmt.run(annotationId);
 
-      // ?�新?��? mentions ?�??
+      // 更新相關 mentions 狀態
       const updateMentionsStmt = getDb().prepare(`
         UPDATE mentions 
         SET status = 'resolved'
@@ -401,18 +419,18 @@ class AnnotationService {
   }
 
   /**
-   * ?��??�戶?��?確�??�表（被 @ ?�批註�?
+   * 獲取用戶的待確認列表（被 @ 的批註）
    */
   async getUserMentions(
     userId: number,
     projectId: number
   ): Promise<{ mentions: any[]; total: number }> {
     try {
-      // ?�數驗�?
+      // 參數驗證
       validatePositiveInteger(userId, 'User ID');
       validatePositiveInteger(projectId, 'Project ID');
 
-      // 檢查?�目權�?
+      // 檢查項目權限
       if (!projectRepository.isOwnedByUser(projectId, userId)) {
         return {
           mentions: [],
@@ -420,7 +438,7 @@ class AnnotationService {
         };
       }
 
-      // ?��?待確認�? mentions
+      // 獲取待確認的 mentions
       const stmt = getDb().prepare(`
         SELECT 
           m.*,
@@ -459,18 +477,18 @@ class AnnotationService {
   }
 
   /**
-   * 標�? mention ?�已讀
+   * 標記 mention 為已讀
    */
   async markMentionAsRead(
     mentionId: number,
     userId: number
   ): Promise<{ success: boolean; message: string }> {
     try {
-      // ?�數驗�?
+      // 參數驗證
       validatePositiveInteger(mentionId, 'Mention ID');
       validatePositiveInteger(userId, 'User ID');
 
-      // 檢查 mention ?�否存在
+      // 檢查 mention 是否存在
       const stmt = getDb().prepare('SELECT * FROM mentions WHERE id = ?');
       const mention = stmt.get(mentionId) as Mention | undefined;
       
@@ -481,7 +499,7 @@ class AnnotationService {
         };
       }
 
-      // 檢查?�否?�被 @ ?�用??
+      // 檢查是否為被 @ 的用戶
       if (mention.mentioned_user_id !== userId) {
         return {
           success: false,
@@ -489,7 +507,7 @@ class AnnotationService {
         };
       }
 
-      // ?�新?�?�為 read
+      // 更新狀態為 read
       const updateStmt = getDb().prepare(`
         UPDATE mentions 
         SET status = 'read'
@@ -520,7 +538,7 @@ class AnnotationService {
   }
 
   /**
-   * 從批註內容中?��? @mentions
+   * 從批註內容中提取 @mentions
    */
   private extractMentions(content: string): string[] {
     const mentionRegex = /@(\w+)/g;
@@ -531,11 +549,11 @@ class AnnotationService {
       mentions.push(match[1]);
     }
 
-    return [...new Set(mentions)]; // ?��?
+    return [...new Set(mentions)]; // 去重
   }
 
   /**
-   * ?�建 mentions 記�?
+   * 創建 mentions 記錄
    */
   private async createMentions(
     annotationId: number,
@@ -549,11 +567,11 @@ class AnnotationService {
       `);
 
       for (const username of usernames) {
-        // ?�找?�戶
+        // 查找用戶
         const user = userRepository.findByUsername(username);
         
         if (user) {
-          // 檢查?�戶?�否?��??��???
+          // 檢查用戶是否屬於該項目
           if (projectRepository.isOwnedByUser(projectId, user.id)) {
             stmt.run(annotationId, user.id);
           }
@@ -565,6 +583,5 @@ class AnnotationService {
   }
 }
 
-// 導出?��?
+// 導出實例
 export const annotationService = new AnnotationService();
-
