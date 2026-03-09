@@ -66,6 +66,9 @@ export async function initDatabase(): Promise<void> {
     // �Ыت����c
     createTables();
 
+    // 執行資料庫遷移
+    migrateDatabase();
+
     // ��l�ƹw�]���
     initializeDefaultData();
 
@@ -392,4 +395,28 @@ export function closeDatabase(): void {
  */
 export function getDatabasePath(): string {
   return dbPath;
+}
+
+/**
+ * ��Ʈw�E���G�K�[�ʥ������
+ */
+function migrateDatabase(): void {
+  if (!db) throw new Error('Database not initialized');
+
+  try {
+    // �ˬd clauses ��O�_�� updated_at ���
+    const tableInfo = db.exec("PRAGMA table_info(clauses)");
+    if (tableInfo.length > 0) {
+      const columns = tableInfo[0].values.map(row => row[1]); // ���W�٦b�ĤG�C
+      
+      if (!columns.includes('updated_at')) {
+        console.log('Adding updated_at column to clauses table...');
+        db.run('ALTER TABLE clauses ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP');
+        console.log('Migration completed: updated_at column added to clauses table');
+      }
+    }
+  } catch (error) {
+    console.error('Database migration failed:', error);
+    // ���ߥX���~�A�������~��B��
+  }
 }
