@@ -35,7 +35,7 @@ interface AnnotationPanelProps {
 }
 
 const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, onClose }) => {
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [loading, setLoading] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
@@ -51,108 +51,133 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
   }, [visible, clauseId]);
 
   const loadAnnotations = async () => {
+    if (!user) {
+      message.error('請先登入');
+      return;
+    }
+
     setLoading(true);
     try {
-      const result = await window.electronAPI.annotation.getByClause(clauseId, currentUser.id);
+      const result = await window.electronAPI.annotation.getByClause(clauseId, user.id);
       
       if (result.success && result.data && result.data.items) {
         setAnnotations(result.data.items);
       } else {
-        message.error(result.message || '載入?�註失�?');
+        message.error(result.message || '載入備註失敗');
       }
     } catch (error) {
-      console.error('載入?�註失�?:', error);
-      message.error('載入?�註失�?');
+      console.error('載入備註失敗:', error);
+      message.error('載入備註失敗');
     } finally {
       setLoading(false);
     }
   };
 
   const handleAdd = async () => {
+    if (!user) {
+      message.error('請先登入');
+      return;
+    }
+
     if (!newContent.trim()) {
-      message.error('?�註?�容不能?�空');
+      message.error('備註內容不能為空');
       return;
     }
 
     try {
       const result = await window.electronAPI.annotation.create(
         clauseId,
-        currentUser.id,
+        user.id,
         newContent,
         newType
       );
 
       if (result.success) {
-        message.success('添�??�註?��?');
+        message.success('添加備註成功');
         setNewContent('');
         setNewType('comment');
         setIsAdding(false);
         loadAnnotations();
       } else {
-        message.error(result.message || '添�??�註失�?');
+        message.error(result.message || '添加備註失敗');
       }
     } catch (error) {
-      console.error('添�??�註失�?:', error);
-      message.error('添�??�註失�?');
+      console.error('添加備註失敗:', error);
+      message.error('添加備註失敗');
     }
   };
 
   const handleUpdate = async (annotationId: number) => {
+    if (!user) {
+      message.error('請先登入');
+      return;
+    }
+
     if (!editContent.trim()) {
-      message.error('?�註?�容不能?�空');
+      message.error('備註內容不能為空');
       return;
     }
 
     try {
       const result = await window.electronAPI.annotation.update(
         annotationId,
-        currentUser.id,
+        user.id,
         editContent
       );
 
       if (result.success) {
-        message.success('?�新?�註?��?');
+        message.success('更新備註成功');
         setEditingId(null);
         setEditContent('');
         loadAnnotations();
       } else {
-        message.error(result.message || '?�新?�註失�?');
+        message.error(result.message || '更新備註失敗');
       }
     } catch (error) {
-      console.error('?�新?�註失�?:', error);
-      message.error('?�新?�註失�?');
+      console.error('更新備註失敗:', error);
+      message.error('更新備註失敗');
     }
   };
 
   const handleDelete = async (annotationId: number) => {
+    if (!user) {
+      message.error('請先登入');
+      return;
+    }
+
     try {
-      const result = await window.electronAPI.annotation.delete(annotationId, currentUser.id);
+      const result = await window.electronAPI.annotation.delete(annotationId, user.id);
 
       if (result.success) {
-        message.success('?�除?�註?��?');
+        message.success('刪除備註成功');
         loadAnnotations();
       } else {
-        message.error(result.message || '?�除?�註失�?');
+        message.error(result.message || '刪除備註失敗');
       }
     } catch (error) {
-      console.error('?�除?�註失�?:', error);
-      message.error('?�除?�註失�?');
+      console.error('刪除備註失敗:', error);
+      message.error('刪除備註失敗');
     }
   };
 
   const handleResolve = async (annotationId: number) => {
+    if (!user) {
+      message.error('請先登入');
+      return;
+    }
+
     try {
-      const result = await window.electronAPI.annotation.resolve(annotationId, currentUser.id);
+      const result = await window.electronAPI.annotation.resolve(annotationId, user.id);
 
       if (result.success) {
-        message.success('標�??�已�?��');
+        message.success('標記為已解決');
         loadAnnotations();
       } else {
-        message.error(result.message || '?��?失�?');
+        message.error(result.message || '操作失敗');
       }
     } catch (error) {
-      console.error('標�?失�?:', error);
-      message.error('?��?失�?');
+      console.error('標記失敗:', error);
+      message.error('操作失敗');
     }
   };
 
@@ -168,17 +193,17 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
 
   const getTypeTag = (type: string) => {
     const tagMap = {
-      comment: { color: 'blue', text: '評�?' },
+      comment: { color: 'blue', text: '評論' },
       suggestion: { color: 'green', text: '建議' },
-      question: { color: 'orange', text: '?��?' },
-      issue: { color: 'red', text: '?��?' },
+      question: { color: 'orange', text: '疑問' },
+      issue: { color: 'red', text: '問題' },
     };
     const config = tagMap[type] || tagMap.comment;
     return <Tag color={config.color} icon={getTypeIcon(type)}>{config.text}</Tag>;
   };
 
   const renderMentions = (content: string) => {
-    // �?@username 高亮顯示
+    // 將 @username 高亮顯示
     const parts = content.split(/(@\w+)/g);
     return parts.map((part, index) => {
       if (part.startsWith('@')) {
@@ -198,10 +223,10 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
     <div className="annotation-panel">
       <div className="annotation-panel-header">
         <h3>
-          <CommentOutlined /> ?�註 ({annotations.length})
+          <CommentOutlined /> 備註 ({annotations.length})
         </h3>
         <Button type="text" onClick={onClose}>
-          ?��?
+          關閉
         </Button>
       </div>
 
@@ -212,9 +237,9 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
           </div>
         ) : (
           <>
-            {/* ?�註?�表 */}
+            {/* 備註列表 */}
             {annotations.length === 0 ? (
-              <Empty description="?�無?�註" style={{ margin: '40px 0' }} />
+              <Empty description="暫無備註" style={{ margin: '40px 0' }} />
             ) : (
               <div className="annotations-list">
                 {annotations.map((annotation) => (
@@ -233,7 +258,7 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
                       </Space>
                       {annotation.status === 'resolved' && (
                         <Tag color="success" icon={<CheckCircleOutlined />}>
-                          已解�?
+                          已解決
                         </Tag>
                       )}
                     </div>
@@ -244,7 +269,7 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
                           rows={3}
-                          placeholder="輸入?�註?�容，使??@username ?��??��?"
+                          placeholder="輸入備註內容，使用 @username 提及他人"
                         />
                         <div className="annotation-actions">
                           <Space>
@@ -253,7 +278,7 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
                               size="small"
                               onClick={() => handleUpdate(annotation.id)}
                             >
-                              保�?
+                              保存
                             </Button>
                             <Button
                               size="small"
@@ -262,7 +287,7 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
                                 setEditContent('');
                               }}
                             >
-                              ?��?
+                              取消
                             </Button>
                           </Space>
                         </div>
@@ -272,7 +297,7 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
                         <div className="annotation-content">
                           {renderMentions(annotation.content)}
                         </div>
-                        {annotation.user_id === currentUser.id && annotation.status === 'active' && (
+                        {user && annotation.user_id === user.id && annotation.status === 'active' && (
                           <div className="annotation-actions">
                             <Space>
                               <Button
@@ -292,7 +317,7 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
                                 icon={<CheckCircleOutlined />}
                                 onClick={() => handleResolve(annotation.id)}
                               >
-                                �?��
+                                解決
                               </Button>
                               <Button
                                 type="text"
@@ -301,7 +326,7 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
                                 icon={<DeleteOutlined />}
                                 onClick={() => handleDelete(annotation.id)}
                               >
-                                ?�除
+                                刪除
                               </Button>
                             </Space>
                           </div>
@@ -313,7 +338,7 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
               </div>
             )}
 
-            {/* 添�??�註表單 */}
+            {/* 添加備註表單 */}
             {isAdding ? (
               <Card size="small" className="annotation-form">
                 <Select
@@ -322,36 +347,36 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
                   style={{ width: '100%', marginBottom: 12 }}
                 >
                   <Option value="comment">
-                    <CommentOutlined /> 評�?
+                    <CommentOutlined /> 評論
                   </Option>
                   <Option value="suggestion">
                     <BulbOutlined /> 建議
                   </Option>
                   <Option value="question">
-                    <QuestionCircleOutlined /> ?��?
+                    <QuestionCircleOutlined /> 疑問
                   </Option>
                   <Option value="issue">
-                    <ExclamationCircleOutlined /> ?��?
+                    <ExclamationCircleOutlined /> 問題
                   </Option>
                 </Select>
                 <TextArea
                   value={newContent}
                   onChange={(e) => setNewContent(e.target.value)}
                   rows={4}
-                  placeholder="輸入?�註?�容，使??@username ?��??��?"
+                  placeholder="輸入備註內容，使用 @username 提及他人"
                   style={{ marginBottom: 12 }}
                 />
                 <div className="annotation-form-actions">
                   <Space>
                     <Button type="primary" onClick={handleAdd}>
-                      添�??�註
+                      添加備註
                     </Button>
                     <Button onClick={() => {
                       setIsAdding(false);
                       setNewContent('');
                       setNewType('comment');
                     }}>
-                      ?��?
+                      取消
                     </Button>
                   </Space>
                 </div>
@@ -364,7 +389,7 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
                 onClick={() => setIsAdding(true)}
                 style={{ marginTop: 16 }}
               >
-                添�??�註
+                添加備註
               </Button>
             )}
           </>

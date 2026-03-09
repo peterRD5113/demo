@@ -10,24 +10,24 @@ import type { MenuProps } from 'antd';
 const { Header } = Layout;
 
 const AppHeader: React.FC = () => {
-  const { user, logout, currentUser } = useAuth();
+  const { user, logout } = useAuth();
   const { currentProject } = useProject();
   const navigate = useNavigate();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    if (currentUser && currentProject) {
+    if (user && currentProject) {
       loadUnreadCount();
     }
-  }, [currentUser, currentProject]);
+  }, [user, currentProject]);
 
   const loadUnreadCount = async () => {
-    if (!currentUser || !currentProject) return;
+    if (!user || !currentProject) return;
 
     try {
       const result = await window.electronAPI.annotation.getMentions(
-        currentUser.id,
+        user.id,
         currentProject.id
       );
 

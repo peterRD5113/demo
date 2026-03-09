@@ -38,7 +38,7 @@ interface Mention {
 }
 
 const UnreadMentionsPage: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   const { currentProject } = useProject();
   const navigate = useNavigate();
   const [mentions, setMentions] = useState<Mention[]>([]);
@@ -46,18 +46,18 @@ const UnreadMentionsPage: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'pending' | 'read'>('pending');
 
   useEffect(() => {
-    if (currentUser && currentProject) {
+    if (user && currentProject) {
       loadMentions();
     }
-  }, [currentUser, currentProject, filter]);
+  }, [user, currentProject, filter]);
 
   const loadMentions = async () => {
-    if (!currentUser || !currentProject) return;
+    if (!user || !currentProject) return;
 
     setLoading(true);
     try {
       const result = await window.electronAPI.annotation.getMentions(
-        currentUser.id,
+        user.id,
         currentProject.id
       );
 
@@ -84,10 +84,15 @@ const UnreadMentionsPage: React.FC = () => {
   };
 
   const handleMarkAsRead = async (mentionId: number) => {
+    if (!user) {
+      message.error('請先登入');
+      return;
+    }
+
     try {
       const result = await window.electronAPI.annotation.markMentionRead(
         mentionId,
-        currentUser.id
+        user.id
       );
 
       if (result.success) {
