@@ -214,11 +214,11 @@ class DocumentService {
         };
       }
 
-      const documents = documentRepository.findByProjectId(projectId, page, pageSize);
+      const result = documentRepository.findByProjectIdWithPagination(projectId, page, pageSize);
       const total = documentRepository.countByProjectId(projectId);
 
       return {
-        documents,
+        documents: result.list,
         total
       };
     } catch (error) {
