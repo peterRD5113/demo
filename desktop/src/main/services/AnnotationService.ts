@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 /**
  * Annotation Service
  * 處理備註相關的業務邏輯
@@ -621,3 +621,4 @@ class AnnotationService {
 
 // 導出實例
 export const annotationService = new AnnotationService();
+

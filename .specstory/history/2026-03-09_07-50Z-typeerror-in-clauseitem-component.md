@@ -7537,7 +7537,515 @@ Create annotation failed: Error: NOT NULL constraint failed: annotations.clause_
 
 1. **IPC 處理器確實被調用了** ✅
    - 請求成功到達了 `AnnotationService.createAnnotation`
-   - 參
+   - 參數正確傳遞：`clauseId: 4, userId: 2, content: '123213', type: 'comment'`
+
+2. **問題出在 SQL 執行時** ❌
+   - 錯誤：`NOT NULL constraint failed: annotations.clause_id`
+   - 這表示在執行 INSERT 語句時，`clause_id` 欄位被認為是 NULL
+
+3. **矛盾點**：
+   - 日誌顯示 `clauseId: 4` 被正確傳入
+   - 但 SQL 執行時卻說 `clause_id` 是 NULL
+
+### 可能的原因：
+
+1. **參數綁定問題**：
+   - SQL 語句中的參數名稱可能不匹配
+   - 例如：SQL 使用 `:clause_id`，但綁定時使用 `clauseId`（駝峰式）
+
+2. **參數對象結構問題**：
+   - 綁定參數時可能需要使用 `$clause_id` 或 `:clause_id` 格式
+   - 而不是直接使用 JavaScript 對象的 `clauseId`
+
+3. **SQL.js 綁定語法問題**：
+   - SQL.js 可能需要特定的參數綁定格式
+   - 需要檢查 `stmt.run()` 的參數格式
+
+讓我檢查 `AnnotationService.createAnnotation` 的 SQL 語句和參數綁定：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\AnnotationService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\AnnotationService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+找到了！我看到 SQL 語句使用的是**位置參數** (`?`)，而 `stmt.run()` 也正確地按順序傳遞參數。
+
+但是錯誤說 `clause_id` 是 NULL，這很奇怪。讓我檢查一下 `clauseId` 的值是否真的是數字：
+
+從日誌看到：
+```
+About to execute SQL with params: { clauseId: 4, userId: 2, content: '123213', type: 'comment' }
+```
+
+`clauseId` 確實是 4。但讓我檢查一下 SQL.js 的 `stmt.run()` 方法是否正確接收參數。問題可能出在：
+
+1. **參數順序錯誤**
+2. **參數類型轉換問題**
+3. **SQL.js 的 `run()` 方法需要數組而不是單獨的參數**
+
+讓我檢查 SQL.js 的正確用法：
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "stmt\\.run\\(",
+  "path": "c:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\main",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "stmt\\.run\\(",
+  "path": "c:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\main",
+  "outputMode": "content",
+  "totalFiles": 4,
+  "totalMatches": 6,
+  "topFiles": [
+    {
+      "uri": "desktop/src/main/repositories/RiskRepository.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "desktop\\src\\main\\services\\AnnotationService.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "desktop/src/main/middleware/auditMiddleware.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "desktop/src/main/services/AnnotationService.ts",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+讓我檢查其他 repository 中 `stmt.run()` 的用法，看看是否有不同的模式：
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "stmt\\.run\\(",
+  "path": "c:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\main\\repositories",
+  "outputMode": "content",
+  "context": 2,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "stmt\\.run\\(",
+  "path": "c:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\main\\repositories",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 1,
+  "topFiles": [
+    {
+      "uri": "desktop/src/main/repositories/RiskRepository.ts",
+      "matchCount": 5
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+讓我檢查一個具體的 repository 文件來看 SQL.js 的正確用法：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\repositories\ClauseRepository.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+我看到了！其他地方使用的是 `executeRawQuery` 方法，參數是以**數組**形式傳遞的：`[documentId]`。
+
+讓我檢查 `BaseRepository` 來看看 SQL.js 的正確用法：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\repositories\BaseRepository.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+**找到問題了！**
+
+在 `BaseRepository` 中，所有的 `db.run()` 調用都是傳遞**數組**作為參數：
+
+```typescript
+this.db.run(sql, [id]);  // 數組形式
+this.db.run(sql, [...values, id] as any[]);  // 數組形式
+```
+
+但是在 `AnnotationService.createAnnotation` 中，你使用的是：
+
+```typescript
+const stmt = getDb().prepare(`...`);
+const result = stmt.run(clauseId, userId, content, type);  // ❌ 錯誤：單獨的參數
+```
+
+**SQL.js 的 `run()` 方法需要接收一個數組，而不是單獨的參數！**
+
+## 解決方案
+
+修改 `AnnotationService.ts` 中的 SQL 執行方式：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\AnnotationService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+現在我來修復這個問題。需要將參數改為數組形式：
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+讓我重新讀取確切的內容：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\AnnotationService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+讓我檢查是否有特殊字符或空格問題：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services; Get-Content AnnotationService.ts -Encoding UTF8 | Select-Object -Skip 113 -First 10</summary>
+
+```bash
+cd c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services; Get-Content AnnotationService.ts -Encoding UTF8 | Select-Object -Skip 113 -First 10
+```
+
+```
+      // �ЫسƵ�
+      const stmt = getDb().prepare(&#96;
+        INSERT INTO annotations (clause_id, user_id, content, type, status)
+      console.log('Annotation created with ID:', annotationId);
+
+        VALUES (?, ?, ?, ?, 'active')
+      &#96;);
+      
+      const result = stmt.run(clauseId, userId, content, type);
+      const annotationId = result.lastInsertRowid as number;
+
+```
+</details>
+</tool-use>
+
+---
+
+看起來文件內容有些混亂。讓我重新讀取完整的方法：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\AnnotationService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\AnnotationService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+好的，現在我看到完整的代碼了。讓我修復這個問題：
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+讓我直接重寫整個文件的這個方法部分：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\AnnotationService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+我看到問題了！代碼中使用的是 `stmt.run()` 和 `stmt.all()` 和 `stmt.get()` 方法，這些是 `better-sqlite3` 的 API，但項目使用的是 `sql.js`！
+
+這兩個庫的 API 完全不同：
+
+- **better-sqlite3**: `stmt.run(param1, param2, ...)` - 接受單獨的參數
+- **sql.js**: `db.run(sql, [param1, param2, ...])` - 需要數組參數
+
+讓我修復整個文件，使用正確的 `sql.js` API：
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\AnnotationService.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+完美！現在讓我們重新編譯並測試：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\fortu\Desktop\Project\Demo\desktop; npm run build</summary>
+
+```bash
+cd c:\Users\fortu\Desktop\Project\Demo\desktop; npm run build
+```
+
+```
+
+&gt; contract-risk-management@1.0.0 build
+&gt; npm run build:main &amp;&amp; npm run build:renderer
+
+
+&gt; contract-risk-management@1.0.0 build:main
+&gt; tsc -p tsconfig.json &amp;&amp; tsc-alias -p tsconfig.json
+
+
+&gt; contract-risk-management@1.0.0 build:renderer
+&gt; vite build --config vite.renderer.config.mjs
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3082 modules transformed.
+rendering chunks...
+computing gzip size...
+../../dist/renderer/index.html                     0.53 kB │ gzip:   0.39 kB
+../../dist/renderer/assets/index-C5gI11eR.css     14.94 kB │ gzip:   3.32 kB
+../../dist/renderer/assets/index-PqbVBMuF.js   1,160.07 kB │ gzip: 370.97 kB │ map: 5,336.46 kB
+✓ built in 7.50s
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+```
+</details>
+</tool-use>
+
+---
+
+太好了！編譯成功。現在讓我們提交這個重要的修復：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\fortu\Desktop\Project\Demo; git add -A</summary>
+
+```bash
+cd c:\Users\fortu\Desktop\Project\Demo; git add -A
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\fortu\Desktop\Project\Demo; git commit -m "Fix annotation creation: use sql.js API correctly with array parameters instead of better-sqlite3 API"</summary>
+
+```bash
+cd c:\Users\fortu\Desktop\Project\Demo; git commit -m "Fix annotation creation: use sql.js API correctly with array parameters instead of better-sqlite3 API"
+```
+
+```
+[main e146053] Fix annotation creation: use sql.js API correctly with array parameters instead of better-sqlite3 API
+ 2 files changed, 737 insertions(+), 52 deletions(-)
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\fortu\Desktop\Project\Demo; git push</summary>
+
+```bash
+cd c:\Users\fortu\Desktop\Project\Demo; git push
+```
+
+```
+To https://github.com/peterRD5113/demo.git
+   279d4d7..e146053  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+## 問題已解決！🎉
+
+### 根本原因分析
+
+**問題**：`NOT NULL constraint failed: annotations.clause_id`
+
+**根本原因**：代碼混用了兩個不同 SQLite 庫的 API：
+
+1. **項目使用的是 `sql.js`**（WebAssembly 版本的 SQLite）
+2. **代碼卻使用了 `better-sqlite3` 的 API**
+
+### API 差異
+
+| 庫 | API 風格 | 參數格式 |
+|---|---|---|
+| **better-sqlite3** | `stmt.run(param1, param2, ...)` | 單獨的參數 |
+| **sql.js** | `db.run(sql, [param1, param2, ...])` | **數組參數** |
+
+### 錯誤代碼
+
+```typescript
+// ❌ 錯誤：使用 better-sqlite3 的 API
+const stmt = getDb().prepare(`INSERT INTO annotations ...`);
+const result = stmt.run(clauseId, userId, content, type);
+```
+
+當使用 `sql.js` 時，`stmt.run()` 不接受單獨的參數，導致參數沒有正確綁定到 SQL 語句中，所以 `clause_id` 被認為是 NULL。
+
+### 修復方案
+
+```typescript
+// ✅ 正確：使用 sql.js 的 API
+const sql = `INSERT INTO annotations (clause_id, user_id, content, type, status)
+             VALUES (?, ?, ?, ?, 'active')`;
+getDb().run(sql, [clauseId, userId, content, type]);  // 參數必須是數組
+
+// 獲取插入的 ID
+const result = getDb().exec('SELECT last_insert_rowid() as id');
+const annotationId = result[0].values[0][0] as number;
+```
+
+### 修改內容
+
+已將 `AnnotationService.ts` 中所有的數據庫操作從 `better-sqlite3` API 改為 `sql.js` API：
+- `stmt.run()` → `db.run(sql, [params])`
+- `stmt.get()` → `db.exec(sql, [params])`
+- `stmt.all()` → `db.exec(sql, [params])`
+
+現在請重新啟動應用並測試批註創建功能，應該可以正常工作了！
+
+---
+
+_**User**_
+
+有顯示添加成功, 但是 備註框 卻沒顯示出來 你先看看什麼原因 先檢查不動做
+
+---
+
+_**Agent (model claude-4.6-sonnet-medium, mode Agent)**_
+
+好的，讓我先檢查批註顯示的相關代碼，看看為什麼添加成功後沒有顯示出來。
+
+---
+
+File not found: c:\Users\fortu\Desktop\Project\Demo\frontend\src\components\AnnotationPanel.tsx
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **2** results in **1** directory</summary>
+
+Directory: **c:\Users\fortu\Desktop\Project\Demo** (2 files)
+
+| File |
+|------|
+| `desktop/src/renderer/components/AnnotationPanel.tsx` |
+| `desktop\src\renderer\components\AnnotationPanel.tsx` |
+
+</details>
+</tool-use>
 
 ---
 
