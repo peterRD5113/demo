@@ -126,14 +126,34 @@ class DocumentParserService {
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
-      const pageText = textContent.items.map((item: any) => item.str).join(' ');
-      fullText += pageText + '\n';
+      
+      // 改進文本提取：保留換行符
+      let pageText = '';
+      let lastY = -1;
+      
+      for (const item of textContent.items) {
+        const currentY = item.transform[5];
+        
+        // 如果 Y 坐標變化較大，說明是新的一行
+        if (lastY !== -1 && Math.abs(currentY - lastY) > 5) {
+          pageText += '\n';
+        }
+        
+        pageText += item.str + ' ';
+        lastY = currentY;
+      }
+      
+      fullText += pageText + '\n\n';
     }
     
     console.log(`PDF 文本提取完成，長度: ${fullText.length}`);
+    console.log(`PDF 文本前 500 字符:`, fullText.substring(0, 500));
     
     // 將文本按行分割
     const lines = fullText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    console.log(`PDF 共 ${lines.length} 行文本`);
+    console.log(`前 10 行:`, lines.slice(0, 10));
     
     return this.parseLines(lines);
   }

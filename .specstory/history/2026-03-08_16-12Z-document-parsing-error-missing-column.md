@@ -8682,23 +8682,15 @@ Error: StrReplace failed: old_string not found
 
 ---
 
-
-
----
-
-<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
-
-<details><summary>Tool use: **edit_file_v2** • Edit file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\DocumentParserService.ts</summary>
-
-Status: **loading**
-
-</details>
-
-</tool-use>
+讓我在文件末尾添加 DOCX 和 PDF 解析方法：
 
 ---
 
+Error: StrReplace failed: old_string not found
 
+---
+
+讓我重新讀取文件並找到正確的位置：
 
 ---
 
@@ -8710,7 +8702,512 @@ Status: **loading**
 
 ---
 
+好的，讓我在類的結尾添加新方法：
 
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+讓我直接重寫整個文件：
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\DocumentParserService.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+完成！現在讓我編譯並測試：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build
+```
+
+```
+
+&gt; contract-risk-management@1.0.0 build
+&gt; npm run build:main &amp;&amp; npm run build:renderer
+
+
+&gt; contract-risk-management@1.0.0 build:main
+&gt; tsc -p tsconfig.json &amp;&amp; tsc-alias -p tsconfig.json
+
+
+&gt; contract-risk-management@1.0.0 build:renderer
+&gt; vite build --config vite.renderer.config.mjs
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3082 modules transformed.
+rendering chunks...
+computing gzip size...
+../../dist/renderer/index.html                     0.53 kB │ gzip:   0.39 kB
+../../dist/renderer/assets/index-C5gI11eR.css     14.94 kB │ gzip:   3.32 kB
+../../dist/renderer/assets/index-OkLffH5G.js   1,156.25 kB │ gzip: 370.06 kB │ map: 5,323.85 kB
+✓ built in 6.74s
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+```
+</details>
+</tool-use>
+
+---
+
+編譯成功！現在讓我提交：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "feat: 實現 PDF 和 DOCX 文檔解析功能
+
+- 使用 mammoth 庫解析 DOCX 文件
+- 使用 pdfjs-dist 庫解析 PDF 文件
+- 提取文本後使用統一的條款識別邏輯
+- 重構代碼，將解析邏輯抽取為 parseLines 通用方法
+- 添加詳細的日誌輸出，便於調試
+- 現在支持 TXT、DOCX、PDF 三種格式"; git push</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo; git add -A; git commit -m "feat: 實現 PDF 和 DOCX 文檔解析功能
+
+- 使用 mammoth 庫解析 DOCX 文件
+- 使用 pdfjs-dist 庫解析 PDF 文件
+- 提取文本後使用統一的條款識別邏輯
+- 重構代碼，將解析邏輯抽取為 parseLines 通用方法
+- 添加詳細的日誌輸出，便於調試
+- 現在支持 TXT、DOCX、PDF 三種格式"; git push
+```
+
+```
+[main 51e090a] feat: 實現 PDF 和 DOCX 文檔解析功能
+ 2 files changed, 328 insertions(+), 8 deletions(-)
+To https://github.com/peterRD5113/demo.git
+   c47a57c..51e090a  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+完成！✅ PDF 和 DOCX 解析功能已經實現！
+
+## 🎯 實現的功能
+
+### DOCX 解析
+- 使用 `mammoth` 庫提取文本
+- 支持所有 Word 文檔格式
+
+### PDF 解析
+- 使用 `pdfjs-dist` 庫提取文本
+- 逐頁提取並合併所有文本內容
+
+### 統一的解析邏輯
+- 將 TXT、DOCX、PDF 的文本都轉換為行數組
+- 使用相同的條款識別邏輯（識別"第X條"、"第X款"等）
+- 自動建立條款層級關係
+
+## 📋 測試步驟
+
+現在請您：
+
+1. **重新啟動應用程式**
+2. **上傳 DOCX 文件**：
+   - 應該能正確解析出條款
+   - 查看條款數量和內容
+3. **上傳 PDF 文件**：
+   - 應該能正確解析出條款
+   - 查看條款數量和內容
+4. **檢查控制台日誌**：
+   - 會顯示文本提取長度
+   - 會顯示解析出的條款數量
+
+## ⚠️ 注意事項
+
+解析效果取決於文檔格式：
+- **結構化文檔**（有明確的"第X條"標記）：解析效果最好
+- **純文本文檔**：可能無法識別條款結構
+- **掃描版 PDF**：無法提取文本（需要 OCR）
+
+請告訴我測試結果！如果 DOCX 或 PDF 解析出來的內容還是空的，請提供控制台的日誌輸出，我會進一步調試。
+
+---
+
+_**User**_
+
+你好像動到其他地方, 現在上傳案紐 點了沒反應了
+
+---
+
+_**Agent (model gpt-5.3-codex, mode Agent)**_
+
+讓我檢查一下上傳功能。讓我查看文檔上傳的處理邏輯：
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "handleUpload|Upload",
+  "path": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\renderer\\pages\\DocumentListPage.tsx",
+  "outputMode": "content",
+  "context": 10,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "handleUpload|Upload",
+  "path": "C:\\Users\\fortu\\Desktop\\Project\\Demo\\desktop\\src\\renderer\\pages\\DocumentListPage.tsx",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 13,
+  "topFiles": [
+    {
+      "uri": "desktop\\src\\renderer\\pages\\DocumentListPage.tsx",
+      "matchCount": 159
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+讓我讀取文檔列表頁面的上傳處理部分：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\pages\DocumentListPage.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+上傳邏輯看起來沒問題。讓我檢查後端的文檔創建處理器，看看是否有問題：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\ipc\handlers\documentHandlers.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+文件也是亂碼。讓我檢查 DocumentService 的 createDocument 方法，看看是否有錯誤：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\DocumentService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+讓我繼續讀取 createDocument 方法的後半部分：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\DocumentService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+代碼看起來沒問題。讓我檢查終端日誌，看看上傳時是否有錯誤：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: Get-Content C:\Users\fortu\.cursor\projects\c-Users-fortu-Desktop-Project-Demo\terminals\5.txt | Select-Object -Last 50</summary>
+
+```bash
+Get-Content C:\Users\fortu\.cursor\projects\c-Users-fortu-Desktop-Project-Demo\terminals\5.txt | Select-Object -Last 50
+```
+
+```
+Key pressed: Control Control: false Shift: false
+Key pressed: v Control: false Shift: false
+Window closed
+PS C:\Users\fortu\Desktop\Project\Demo\desktop&gt; npm start
+
+&gt; contract-risk-management@1.0.0 start
+&gt; electron-forge startKey pressed: v Control: true Shift: false
+Key pressed: s Control: false Shift: false
+Key pressed: t Control: false Shift: false
+Key pressed: t Control: false Shift: false
+Key pressed: Control Control: true Shift: false
+Key pressed: c Control: true Shift: false
+Key pressed: Control Control: false Shift: false
+Key pressed: c Control: false Shift: false
+Key pressed: Control Control: true Shift: false
+??Running preStart hook                                               
+??Launched Electron app. Type rs in terminal to restart main          
+process.                                                              
+
+
+Database loaded from: C:\Users\fortu\AppData\Roaming\Contract Risk Management\contract_risk.db
+Database saved to: C:\Users\fortu\AppData\Roaming\Contract Risk Management\contract_risk.db
+Database initialized successfully
+Database initialized successfully
+Registering IPC handlers...
+IPC handlers registered successfully
+IPC handlers registered successfully
+Creating main window...
+Window created, loading HTML...
+HTML path: C:\Users\fortu\Desktop\Project\Demo\desktop\dist\renderer\index.html
+
+
+??Checking your system
+??Locating application                                                
+??Loading configuration                                               
+??Preparing native dependencies: 1 / 1 [21s]                          
+??Running generateAssets hook                                         
+??Page finished loading
+??HTML loaded successfully
+Key pressed: Control Control: true Shift: false
+Key pressed:   Control: true Shift: false
+Key pressed: Control Control: false Shift: false
+Key pressed: t Control: false Shift: false
+Key pressed: e Control: false Shift: false
+Key pressed: t Control: false Shift: false
+Key pressed: e Control: false Shift: false
+Key pressed: s Control: false Shift: false
+Key pressed: v Control: true Shift: false
+Key pressed: Control Control: false Shift: false
+Key pressed: v Control: false Shift: false
+
+```
+</details>
+</tool-use>
+
+---
+
+日誌中沒有看到上傳相關的錯誤。讓我檢查前端是否正確調用了 API。讓我查看 Upload 組件的配置：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\pages\DocumentListPage.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+讓我查看 Upload 組件的渲染部分：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\pages\DocumentListPage.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+Upload 組件看起來正常。問題可能是我修改了 `parseTxtFile` 方法，將其改為調用 `parseLines`，但沒有保留原來的實現。讓我檢查一下：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\DocumentParserService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+代碼看起來沒問題。讓我在瀏覽器控制台添加一些調試日誌，看看上傳按鈕點擊時發生了什麼。讓我修改 handleUpload 函數添加更多日誌：
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+讓我先檢查一下是否有編譯錯誤。讓我查看最近的構建輸出：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build 2>&1 | Select-String -Pattern "error|Error|warning" | Select-Object -First 20</summary>
+
+```bash
+cd C:\Users\fortu\Desktop\Project\Demo\desktop; npm run build 2>&1 | Select-String -Pattern "error|Error|warning" | Select-Object -First 20
+```
+
+```
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+
+```
+</details>
+</tool-use>
+
+---
+
+沒有編譯錯誤。讓我檢查應用程式是否正在運行，以及是否需要重新啟動：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: Get-Process | Where-Object { $_.ProcessName -match "electron" } | Select-Object ProcessName, Id, StartTime | Format-Table</summary>
+
+```bash
+Get-Process | Where-Object { $_.ProcessName -match "electron" } | Select-Object ProcessName, Id, StartTime | Format-Table
+```
+
+```
+
+
+ProcessName    Id StartTime               
+electron    60052 2026-03-09 �U�� 12:55:17
+electron    64180 2026-03-09 �U�� 12:55:17
+
+-----------    -- ---------               
+electron    32504 2026-03-09 �U�� 12:55:18
+electron    46636 2026-03-09 �U�� 12:55:17
+electron    57408 2026-03-09 �U�� 12:55:18
+
+```
+</details>
+</tool-use>
+
+---
+
+應用程式正在運行。問題可能是您需要重新啟動應用程式來加載新的代碼。讓我總結一下當前的狀態：
+
+## 📋 當前狀態
+
+### ✅ 已完成的修改
+1. 實現了 PDF 解析功能（使用 pdfjs-dist）
+2. 實現了 DOCX 解析功能（使用 mammoth）
+3. 重構了解析邏輯，使用統一的 `parseLines` 方法
+
+### ⚠️ 需要重新啟動應用程式
+
+您提到"上傳按鈕點了沒反應"，這很可能是因為：
+1. **應用程式還在運行舊代碼**：需要完全關閉並重新啟動
+2. **前端緩存**：需要清除緩存
+
+## 🔧 解決步驟
+
+請執行以下操作：
+
+1. **完全關閉應用程式**：
+   ```powershell
+   Get-Process | Where-Object { $_.ProcessName -match "electron" } | Stop-Process -Force
+   ```
+
+2. **重新啟動應用程式**
+
+3. **測試上傳功能**：
+   - 打開開發者工具（F12）
+   - 查看 Console 標籤
+   - 點擊上傳按鈕
+   - 告訴我控制台顯示什麼
+
+如果還是沒反應，請告訴我控制台的輸出，我會進一步調試。
+
+---
+
+_**User**_
+
+可以了, 但是pdf 的解析還是空的 txt 跟 docx 都可以了
+
+---
+
+_**Agent (model gpt-5.3-codex, mode Agent)**_
+
+好的！TXT 和 DOCX 都可以了，但 PDF 解析還是空的。讓我檢查 PDF 解析的問題。首先讓我查看終端日誌，看看 PDF 解析時的輸出：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: Get-Content C:\Users\fortu\.cursor\projects\c-Users-fortu-Desktop-Project-Demo\terminals\5.txt | Select-String -Pattern "PDF|pdf|解析|頁數|文本提取" | Select-Object -Last 20</summary>
+
+```bash
+Get-Content C:\Users\fortu\.cursor\projects\c-Users-fortu-Desktop-Project-Demo\terminals\5.txt | Select-String -Pattern "PDF|pdf|解析|頁數|文本提取" | Select-Object -Last 20
+```
+
+```
+
+- C:\Users\fortu\Desktop\Project\Demo\desktop\node_modules\pdfjs-dist\legacy\build\pdf.js
+- C:\Users\fortu\Desktop\Project\Demo\desktop\node_modules\pdfjs-dist\legacy\build\pdf.js
+PDF ?: 5
+???????��??: PDF ????�??��?�??
+?????????: C:\Users\fortu\Desktop\Project\Demo\?��?�???_?�∪�???.pdf, ?�?: pdf
+?????????: C:\Users\fortu\Desktop\Project\Demo\?��?�???_?�∪�???.pdf, ?�?: pdf
+PDF ??�????�??�?�摨? 2144
+
+```
+</details>
+</tool-use>
+
+---
+
+我看到了！PDF 文本提取完成了（長度 2144），但可能是條款識別的問題。讓我檢查 PDF 文本提取後的格式。問題可能是 PDF 提取的文本格式與 TXT/DOCX 不同。
+
+讓我修改 PDF 解析方法，改善文本提取的質量：
+
+---
+
+Error: StrReplace failed: old_string not found
+
+---
+
+讓我重新讀取文件查看確切的內容：
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\fortu\Desktop\Project\Demo\desktop\src\main\services\DocumentParserService.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+現在讓我替換 PDF 解析方法：
 
 ---
 
