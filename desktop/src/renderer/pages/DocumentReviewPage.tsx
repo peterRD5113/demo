@@ -161,11 +161,16 @@ const DocumentReviewPage: React.FC = () => {
   };
 
   const handleClauseClick = (clauseId: number) => {
+    console.log('handleClauseClick called with clauseId:', clauseId);
     // 只有条款（level > 0）才能打开批注面板
     const clause = clauses.find(c => c.id === clauseId);
+    console.log('Found clause:', clause);
     if (clause && clause.level > 0) {
+      console.log('Setting selectedClauseId to:', clauseId);
       setSelectedClauseId(clauseId);
       setShowAnnotationPanel(true);
+    } else {
+      console.log('Clause not found or level <= 0');
     }
   };
 
@@ -512,7 +517,7 @@ const DocumentReviewPage: React.FC = () => {
         </Card>
       </Content>
 
-      {selectedClauseId && (
+      {selectedClauseId && selectedClauseId > 0 && (
         <AnnotationPanel
           clauseId={selectedClauseId}
           visible={showAnnotationPanel}

@@ -31,8 +31,8 @@ const AppHeader: React.FC = () => {
         currentProject.id
       );
 
-      if (result.success && result.data) {
-        const pending = result.data.filter((m: any) => m.status === 'pending');
+      if (result.success && result.data && result.data.items) {
+        const pending = result.data.items.filter((m: any) => m.status === 'pending');
         setUnreadCount(pending.length);
       }
     } catch (error) {
