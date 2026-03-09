@@ -70,6 +70,18 @@ const AppHeader: React.FC = () => {
       label: 'Projects',
       onClick: () => navigate('/projects'),
     },
+    // 如果在文檔列表頁面，顯示返回項目列表按鈕
+    ...(location.pathname.includes('/documents') ? [{
+      key: 'back-to-projects',
+      label: '← Back to Projects',
+      onClick: () => navigate('/projects'),
+    }] : []),
+    // 如果在文檔審閱頁面，顯示返回文檔列表按鈕
+    ...(location.pathname.includes('/document/') && currentProject ? [{
+      key: 'back-to-documents',
+      label: '← Back to Documents',
+      onClick: () => navigate(`/project/${currentProject.id}/documents`),
+    }] : []),
     {
       key: '/mentions',
       icon: <BellOutlined />,
