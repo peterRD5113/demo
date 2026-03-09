@@ -38,7 +38,7 @@ const ClauseItem: React.FC<ClauseItemProps> = ({
   onUpdate,
   editable = true 
 }) => {
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(clause.title || '');
   const [editedContent, setEditedContent] = useState(clause.content);
@@ -81,6 +81,11 @@ const ClauseItem: React.FC<ClauseItemProps> = ({
   const handleSave = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
+    if (!user) {
+      message.error('用戶未登入，無法保存');
+      return;
+    }
+    
     if (!editedContent.trim()) {
       message.error('條款內容不能為空');
       return;
@@ -110,7 +115,7 @@ const ClauseItem: React.FC<ClauseItemProps> = ({
       
       const result = await window.electronAPI.clause.update(
         clause.id,
-        currentUser.id,
+        user.id,
         updateData
       );
 

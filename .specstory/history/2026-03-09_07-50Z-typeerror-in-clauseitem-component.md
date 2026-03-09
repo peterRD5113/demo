@@ -264,3 +264,123 @@ _**Agent (model claude-4.6-sonnet-medium, mode Agent)**_
 
 ---
 
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\components\AppHeader.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+還有其他損壞的字串，讓我一起修復：
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\components\AppHeader.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+還有更多損壞的字串，讓我修復剩下的：
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\fortu\Desktop\Project\Demo\desktop\src\renderer\components\AppHeader.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+完成！我已經修復了 AppHeader.tsx 中所有損壞的字串：
+
+## ✅ 修復內容
+
+### AppHeader.tsx - 字串編碼問題
+
+1. **第 90 行**：`待確認�???` → `待確認提及`
+2. **第 40 行**：`載入?��??��?失�?` → `載入未讀提及數量失敗`
+3. **第 73-82 行**：修復了註釋和按鈕文字
+   - `如�??��?檔�?表�??��?顯示返�??�目?�表?��?` → `如果在文檔列表頁面，顯示返回項目列表按鈕`
+   - `??Back to Projects` → `← Back to Projects`
+   - `如�??��?檔審?��??��?顯示返�??��??�表?��?` → `如果在文檔審閱頁面，顯示返回文檔列表按鈕`
+   - `??Back to Documents` → `← Back to Documents`
+
+## 🎯 已修復的所有檔案
+
+1. ✅ **UnreadMentionsPage.tsx** - 字串編碼問題
+2. ✅ **ClauseItem.tsx** - API 調用錯誤（`window.api` → `window.electronAPI`）
+3. ✅ **AppHeader.tsx** - 字串編碼問題
+
+現在應該可以成功編譯了！請重新運行 `npm run build` 或 `npm run dev`。
+
+---
+
+_**User**_
+
+你先推送
+
+---
+
+_**Agent (model claude-4.6-sonnet-medium, mode Agent)**_
+
+好的，我來推送這些修復：
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\fortu\Desktop\Project\Demo" && git add -A && git commit -m "修復字串編碼問題和API調用錯誤
+
+- 修復 UnreadMentionsPage.tsx 中損壞的中文字串
+- 修復 AppHeader.tsx 中損壞的中文字串和註釋
+- 修復 ClauseItem.tsx 中的 API 調用錯誤 (window.api -> window.electronAPI)
+- 解決編譯錯誤：Unterminated string literal
+- 解決運行時錯誤：Cannot read properties of undefined (reading 'clause')" && git push</summary>
+
+```bash
+cd "c:\Users\fortu\Desktop\Project\Demo" && git add -A && git commit -m "修復字串編碼問題和API調用錯誤
+
+- 修復 UnreadMentionsPage.tsx 中損壞的中文字串
+- 修復 AppHeader.tsx 中損壞的中文字串和註釋
+- 修復 ClauseItem.tsx 中的 API 調用錯誤 (window.api -> window.electronAPI)
+- 解決編譯錯誤：Unterminated string literal
+- 解決運行時錯誤：Cannot read properties of undefined (reading 'clause')" && git push
+```
+
+```
+��� C:\Users\fortu\AppData\Local\Temp\ps-script-c7da66d2-6464-4ad3-af9f-4c051f2f1f20.ps1:7 �r��:42
++ cd "c:\Users\fortu\Desktop\Project\Demo" &amp;&amp; git add -A &amp;&amp; git commit  ...
++                                          ~~
+�b�o�Ӫ����� '&amp;&amp;' �y�J�򤸤��O���Ī����z�����j�Ÿ��C
+��� C:\Users\fortu\AppData\Local\Temp\ps-script-c7da66d2-6464-4ad3-af9f-4c051f2f1f20.ps1:7 �r��:56
++ cd "c:\Users\fortu\Desktop\Project\Demo" &amp;&amp; git add -A &amp;&amp; git commit  ...
++                                                        ~~
+�b�o�Ӫ����� '&amp;&amp;' �y�J�򤸤��O���Ī����z�����j�Ÿ��C
+��� C:\Users\fortu\AppData\Local\Temp\ps-script-c7da66d2-6464-4ad3-af9f-4c051f2f1f20.ps1:13 �r��:67
++ ... ���~�GCannot read properties of undefined (reading 'clause')" &amp;&amp; git pus ...
++                                                                ~~
+�b�o�Ӫ����� '&amp;&amp;' �y�J�򤸤��O���Ī����z�����j�Ÿ��C
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+
+```
+</details>
+</tool-use>
+
+---
+
+PowerShell 不
+
+---
+
