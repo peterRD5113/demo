@@ -62,6 +62,9 @@ export async function initDatabase(): Promise<void> {
 
     // �ҥΥ~�����
     db.run('PRAGMA foreign_keys = ON');
+    
+    // 設置 UTF-8 編碼
+    db.run('PRAGMA encoding = "UTF-8"');
 
     // �Ыت����c
     createTables();
