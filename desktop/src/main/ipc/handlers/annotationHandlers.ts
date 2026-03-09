@@ -12,19 +12,24 @@ class AnnotationHandlers {
    * 註冊所有批註相關的 IPC 處理器
    */
   register(ipcMain: IpcMain): void {
-    console.log('Registering annotation IPC handlers...');
+    console.log('=== ANNOTATION HANDLERS: Starting registration ===');
+    console.log('Channel to register:', ANNOTATION_CHANNELS.CREATE);
     
     // 創建批註
     ipcMain.handle(
       ANNOTATION_CHANNELS.CREATE,
-      async (_event: IpcMainInvokeEvent, request: {
+      async (event: IpcMainInvokeEvent, request: {
         clauseId: number;
         userId: number;
         content: string;
         type?: 'comment' | 'suggestion' | 'question' | 'issue';
       }): Promise<IPCResponse<{ annotationId: number }>> => {
-        console.log('IPC handler received CREATE request:', request);
+        console.log('=== MAIN PROCESS: IPC handler invoked ===');
+        console.log('Channel:', ANNOTATION_CHANNELS.CREATE);
+        console.log('Request:', JSON.stringify(request, null, 2));
+        
         try {
+          console.log('Calling annotationService.createAnnotation...');
           const result = await annotationService.createAnnotation(
             request.clauseId,
             request.userId,
@@ -56,7 +61,7 @@ class AnnotationHandlers {
       }
     );
 
-    console.log('Annotation CREATE handler registered for channel:', ANNOTATION_CHANNELS.CREATE);
+    console.log('=== ANNOTATION HANDLERS: CREATE handler registered ===');
 
     // 獲取條款的所有批註
     ipcMain.handle(
@@ -262,7 +267,7 @@ class AnnotationHandlers {
       }
     );
     
-    console.log('All annotation IPC handlers registered');
+    console.log('=== ANNOTATION HANDLERS: All handlers registered ===');
   }
 }
 
