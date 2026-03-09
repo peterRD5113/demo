@@ -52,7 +52,30 @@ export class DocumentRepository extends BaseRepository<Document> {
     page: number;
     pageSize: number;
   } {
-    return this.findWithPagination(page, pageSize, 'project_id = ?', [projectId]);
+    const result = this.findWithPagination(page, pageSize, 'project_id = ?', [projectId]);
+    
+    const documentsWithRiskCount = result.list.map(doc => {
+      const riskCountResult = this.db.exec(`
+        SELECT COUNT(*) as count 
+        FROM risk_matches rm
+        INNER JOIN clauses c ON rm.clause_id = c.id
+        WHERE c.document_id = ?
+      `, [doc.id]);
+      
+      const riskCount = riskCountResult.length > 0 && riskCountResult[0].values.length > 0
+        ? riskCountResult[0].values[0][0] as number
+        : 0;
+      
+      return {
+        ...doc,
+        risk_count: riskCount
+      };
+    });
+    
+    return {
+      ...result,
+      list: documentsWithRiskCount
+    };
   }
 
   /**
@@ -140,6 +163,7 @@ export class DocumentRepository extends BaseRepository<Document> {
 
 // 導出單例實例
 export const documentRepository = new DocumentRepository();
+
 
 
 
