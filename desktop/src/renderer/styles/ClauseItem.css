@@ -43,19 +43,55 @@
   align-items: center;
 }
 
+.clause-header-left {
+  flex: 1;
+}
+
+.clause-header-right {
+  display: flex;
+  gap: 8px;
+}
+
 .clause-number {
   font-size: 16px;
   font-weight: 600;
   color: #1a1a1a;
 }
 
-.edit-button {
-  opacity: 0;
-  transition: opacity 0.2s;
+/* 批注按钮 - 纯文字样式 */
+.comment-button {
+  font-size: 14px;
+  color: #666;
+  height: 28px;
+  padding: 0 12px;
 }
 
-.clause-item:hover .edit-button {
-  opacity: 1;
+.comment-button:hover {
+  color: #ff9800;
+  background: #fff3e0;
+}
+
+.comment-button.active {
+  color: #ff9800;
+  font-weight: 500;
+}
+
+.comment-button.active:hover {
+  color: #f57c00;
+  background: #ffe0b2;
+}
+
+/* 编辑按钮 */
+.edit-button {
+  font-size: 14px;
+  color: #1890ff;
+  height: 28px;
+  padding: 0 12px;
+}
+
+.edit-button:hover {
+  color: #40a9ff;
+  background: #e6f7ff;
 }
 
 /* 查看模式 */
@@ -118,4 +154,73 @@
 
 .clause-risk-hint .anticon {
   font-size: 16px;
+}
+
+/* 命中文本高亮 */
+.content-highlight {
+  border-radius: 2px;
+  padding: 0 2px;
+  font-weight: 600;
+}
+
+.content-highlight.highlight-high {
+  background-color: #ffccc7;
+  color: #a8071a;
+  text-decoration: underline wavy #ff4d4f;
+}
+
+.content-highlight.highlight-medium {
+  background-color: #fff1b8;
+  color: #874d00;
+  text-decoration: underline wavy #faad14;
+}
+
+.content-highlight.highlight-low {
+  background-color: #bae7ff;
+  color: #003a8c;
+  text-decoration: underline wavy #1890ff;
+}
+
+.content-highlight-block {
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.content-highlight-block.highlight-high {
+  background-color: rgba(255, 204, 199, 0.4);
+}
+
+.content-highlight-block.highlight-medium {
+  background-color: rgba(255, 241, 184, 0.4);
+}
+
+.content-highlight-block.highlight-low {
+  background-color: rgba(186, 231, 255, 0.4);
+}
+
+/* 建議措辭 */
+.clause-suggestion {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-left: 4px solid #52c41a;
+  border-radius: 4px;
+}
+
+.clause-suggestion-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #389e0d;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.clause-suggestion-content {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #135200;
+  white-space: pre-wrap;
+  word-break: break-word;
 }

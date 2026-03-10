@@ -95,6 +95,14 @@ export const SYSTEM_CHANNELS = {
   SHOW_ERROR: 'system:show-error'
 } as const;
 
+// 模板相關通道
+export const TEMPLATE_CHANNELS = {
+  LIST: 'template:list',
+  CREATE: 'template:create',
+  UPDATE: 'template:update',
+  DELETE: 'template:delete',
+} as const;
+
 // 所有通道的聯合類型
 export type IPCChannel =
   | typeof AUTH_CHANNELS[keyof typeof AUTH_CHANNELS]
@@ -104,4 +112,5 @@ export type IPCChannel =
   | typeof RISK_CHANNELS[keyof typeof RISK_CHANNELS]
   | typeof ANNOTATION_CHANNELS[keyof typeof ANNOTATION_CHANNELS]
   | typeof FILE_CHANNELS[keyof typeof FILE_CHANNELS]
-  | typeof SYSTEM_CHANNELS[keyof typeof SYSTEM_CHANNELS];
+  | typeof SYSTEM_CHANNELS[keyof typeof SYSTEM_CHANNELS]
+  | typeof TEMPLATE_CHANNELS[keyof typeof TEMPLATE_CHANNELS];

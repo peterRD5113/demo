@@ -1,0 +1,196 @@
+/* 对照修订视图页面样式 */
+
+.review-comparison-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #f5f5f5;
+}
+
+/* 头部 */
+.review-comparison-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background: white;
+  border-bottom: 1px solid #e8e8e8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.review-comparison-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* 加载和空状态 */
+.review-comparison-loading,
+.review-comparison-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 20px;
+}
+
+/* 主体布局 */
+.review-comparison-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 侧边栏收起按钮 */
+.sidebar-toggle-btn {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-right: 1px solid #e8e8e8;
+  z-index: 10;
+}
+
+.sidebar-toggle-btn .ant-btn {
+  width: 100%;
+  height: 60px;
+  border: none;
+  border-radius: 0;
+  font-size: 18px;
+}
+
+/* 目录侧边栏 */
+.sidebar {
+  width: 250px;
+  margin-left: 40px;
+  background: white;
+  border-right: 1px solid #e8e8e8;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+.sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-item:hover {
+  background: #f5f5f5;
+}
+
+.sidebar-item.active {
+  background: #e6f7ff;
+  border-left-color: #1890ff;
+}
+
+.sidebar-item .clause-number {
+  font-weight: 600;
+  color: #1890ff;
+  min-width: 40px;
+}
+
+.sidebar-item .clause-title {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-item .comment-badge {
+  background: #ff9800;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 原始版本和修订版本 */
+.original-version,
+.revised-version {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  overflow: hidden;
+}
+
+.original-version {
+  border-right: 2px solid #e8e8e8;
+}
+
+.version-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e8e8e8;
+  background: #fafafa;
+}
+
+.version-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.version-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* 滚动条样式 */
+.scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollable::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.scrollable::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* 响应式调整 */
+@media (max-width: 1200px) {
+  .sidebar {
+    width: 200px;
+  }
+}

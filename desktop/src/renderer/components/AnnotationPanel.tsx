@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Input, Select, Space, Tag, message, Empty, Spin } from 'antd';
+import { Card, Button, Input, Select, Space, Tag, message, Empty, Spin, Modal } from 'antd';
 import {
   CommentOutlined,
   BulbOutlined,
@@ -43,6 +43,30 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
   const [newContent, setNewContent] = useState('');
   const [newType, setNewType] = useState<'comment' | 'suggestion' | 'question' | 'issue'>('comment');
   const [editContent, setEditContent] = useState('');
+  const [annotationTemplates, setAnnotationTemplates] = useState<any[]>([]);
+  const [templateModalVisible, setTemplateModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (isAdding && annotationTemplates.length === 0) {
+      loadAnnotationTemplates();
+    }
+  }, [isAdding]);
+
+  const loadAnnotationTemplates = async () => {
+    try {
+      const res = await window.electronAPI.template.list('annotation');
+      if (res.success && res.data?.items) {
+        setAnnotationTemplates(res.data.items);
+      }
+    } catch (e) {
+      // 靜默失敗
+    }
+  };
+
+  const handleInsertAnnotationTemplate = (content: string) => {
+    setNewContent(prev => prev ? prev + '\n' + content : content);
+    setTemplateModalVisible(false);
+  };
 
   useEffect(() => {
     if (visible && clauseId) {
@@ -373,6 +397,34 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
                     <ExclamationCircleOutlined /> 問題
                   </Option>
                 </Select>
+
+                {/* 快速批注模板 */}
+                {annotationTemplates.length > 0 && (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 6 }}>快速插入：</div>
+                    <Space size={4} wrap>
+                      {annotationTemplates.slice(0, 4).map((tpl: any) => (
+                        <Tag
+                          key={tpl.id}
+                          color="blue"
+                          style={{ cursor: 'pointer', marginBottom: 4 }}
+                          onClick={() => handleInsertAnnotationTemplate(tpl.content)}
+                        >
+                          {tpl.name}
+                        </Tag>
+                      ))}
+                      {annotationTemplates.length > 4 && (
+                        <Tag
+                          style={{ cursor: 'pointer', marginBottom: 4 }}
+                          onClick={() => setTemplateModalVisible(true)}
+                        >
+                          更多...
+                        </Tag>
+                      )}
+                    </Space>
+                  </div>
+                )}
+
                 <TextArea
                   value={newContent}
                   onChange={(e) => setNewContent(e.target.value)}
@@ -409,6 +461,37 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
           </>
         )}
       </div>
+
+      {/* 更多批注模板 Modal */}
+      <Modal
+        title="選擇批注模板"
+        open={templateModalVisible}
+        onCancel={() => setTemplateModalVisible(false)}
+        footer={null}
+        width={480}
+      >
+        <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+          {annotationTemplates.map((tpl: any) => (
+            <div
+              key={tpl.id}
+              style={{
+                padding: '10px 12px',
+                marginBottom: 8,
+                border: '1px solid #f0f0f0',
+                borderRadius: 6,
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+              }}
+              onClick={() => handleInsertAnnotationTemplate(tpl.content)}
+              onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f5ff')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{tpl.name}</div>
+              <div style={{ fontSize: 13, color: '#595959', lineHeight: 1.5 }}>{tpl.content}</div>
+            </div>
+          ))}
+        </div>
+      </Modal>
     </div>
   );
 };

@@ -4,7 +4,7 @@
   right: 0;
   top: 64px;
   bottom: 0;
-  width: 400px;
+  width: 320px;
   background: #fff;
   border-left: 1px solid #f0f0f0;
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
@@ -146,7 +146,7 @@
 /* 響應式調整 */
 @media (max-width: 1200px) {
   .annotation-panel {
-    width: 350px;
+    width: 300px;
   }
 }
 

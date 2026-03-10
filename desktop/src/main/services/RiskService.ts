@@ -95,6 +95,9 @@ class RiskService {
       }
 
       // Perform risk identification on each clause
+      // Clear existing risks for this document first to avoid duplicates
+      riskMatchRepository.deleteByDocumentId(documentId);
+
       let risksFound = 0;
       const identifiedRisks: RiskMatch[] = [];
 
@@ -116,7 +119,7 @@ class RiskService {
                 rule.id,
                 rule.risk_level,
                 clause.content.substring(0, 200), // Take first 200 chars as matched text
-                rule.description || '' // Use description as suggestion
+                rule.suggestion || '' // Use suggestion field
               );
 
               risksFound++;
@@ -399,7 +402,8 @@ class RiskService {
     description: string,
     keywords: string[],
     pattern: string,
-    riskLevel: 'high' | 'medium' | 'low'
+    riskLevel: 'high' | 'medium' | 'low',
+    category?: string
   ): Promise<{ success: boolean; message: string; ruleId?: number }> {
     try {
       // Parameter validation
@@ -413,7 +417,8 @@ class RiskService {
         description,
         keywords,
         riskLevel,
-        pattern
+        pattern,
+        category
       );
 
       return {
@@ -449,6 +454,7 @@ class RiskService {
       keywords?: string[];
       pattern?: string;
       riskLevel?: 'high' | 'medium' | 'low';
+      enabled?: number;
     }
   ): Promise<{ success: boolean; message: string }> {
     try {
@@ -529,14 +535,14 @@ class RiskService {
   }
 
   /**
-   * Delete risk rule (soft delete)
+   * Delete risk rule (physical delete)
    */
   async deleteRule(ruleId: number): Promise<{ success: boolean; message: string }> {
     try {
       // Parameter validation
       validatePositiveInteger(ruleId, 'Rule ID');
 
-      riskRuleRepository.softDelete(ruleId);
+      riskRuleRepository.delete(ruleId);
 
       return {
         success: true,

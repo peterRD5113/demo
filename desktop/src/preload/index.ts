@@ -91,6 +91,13 @@ const SYSTEM_CHANNELS = {
   SHOW_ERROR: 'system:show-error'
 };
 
+const TEMPLATE_CHANNELS = {
+  LIST: 'template:list',
+  CREATE: 'template:create',
+  UPDATE: 'template:update',
+  DELETE: 'template:delete',
+};
+
 // 定義暴露給渲染進程的API
 const api = {
   // ============= 認證 API =============
@@ -203,20 +210,20 @@ const api = {
     get: (riskId: number, userId: number) =>
       ipcRenderer.invoke(RISK_CHANNELS.GET, { riskId, userId }),
     
-    list: (projectId: number, userId: number, page?: number, pageSize?: number) =>
-      ipcRenderer.invoke(RISK_CHANNELS.LIST, { projectId, userId, page, pageSize }),
+    list: (documentId: number, userId: number, page?: number, pageSize?: number) =>
+      ipcRenderer.invoke(RISK_CHANNELS.LIST, { documentId, userId, page, pageSize }),
     
-    getByLevel: (projectId: number, userId: number, level: 'high' | 'medium' | 'low', page?: number, pageSize?: number) =>
-      ipcRenderer.invoke(RISK_CHANNELS.GET_BY_LEVEL, { projectId, userId, level, page, pageSize }),
+    getByLevel: (documentId: number, userId: number, level: 'high' | 'medium' | 'low', page?: number, pageSize?: number) =>
+      ipcRenderer.invoke(RISK_CHANNELS.GET_BY_LEVEL, { documentId, userId, level, page, pageSize }),
     
-    getByCategory: (projectId: number, userId: number, category: string, page?: number, pageSize?: number) =>
-      ipcRenderer.invoke(RISK_CHANNELS.GET_BY_CATEGORY, { projectId, userId, category, page, pageSize }),
+    getByCategory: (documentId: number, userId: number, category: string, page?: number, pageSize?: number) =>
+      ipcRenderer.invoke(RISK_CHANNELS.GET_BY_CATEGORY, { documentId, userId, category, page, pageSize }),
     
-    updateStatus: (riskId: number, userId: number, status: 'pending' | 'reviewing' | 'resolved' | 'ignored') =>
+    updateStatus: (riskId: number, userId: number, status: 'high' | 'medium' | 'low') =>
       ipcRenderer.invoke(RISK_CHANNELS.UPDATE_STATUS, { riskId, userId, status }),
     
-    getStats: (projectId: number, userId: number) =>
-      ipcRenderer.invoke(RISK_CHANNELS.GET_STATS, { projectId, userId }),
+    getStats: (documentId: number, userId: number) =>
+      ipcRenderer.invoke(RISK_CHANNELS.GET_STATS, { documentId, userId }),
     
     getRules: () =>
       ipcRenderer.invoke(RISK_CHANNELS.GET_RULES),
@@ -279,6 +286,27 @@ const api = {
       ipcRenderer.invoke(FILE_CHANNELS.GET_FILE_INFO, { filePath })
   },
 
+  // ============= 版本管理 API =============
+  version: {
+    getList: (documentId: number, userId: number) =>
+      ipcRenderer.invoke('version:getList', documentId, userId),
+    
+    getLatest: (documentId: number, userId: number) =>
+      ipcRenderer.invoke('version:getLatest', documentId, userId),
+    
+    getClauses: (versionId: number, userId: number) =>
+      ipcRenderer.invoke('version:getClauses', versionId, userId),
+    
+    create: (documentId: number, userId: number, changeSummary?: string) =>
+      ipcRenderer.invoke('version:create', documentId, userId, changeSummary),
+    
+    rollback: (documentId: number, versionId: number, userId: number) =>
+      ipcRenderer.invoke('version:rollback', documentId, versionId, userId),
+    
+    getComparison: (documentId: number, userId: number) =>
+      ipcRenderer.invoke('version:getComparison', documentId, userId)
+  },
+
   // ============= 系統 API =============
   system: {
     getAppVersion: () =>
@@ -295,6 +323,21 @@ const api = {
     
     showError: (title: string, content: string) =>
       ipcRenderer.invoke(SYSTEM_CHANNELS.SHOW_ERROR, { title, content })
+  },
+
+  // ============= 模板 API =============
+  template: {
+    list: (type?: 'clause' | 'annotation') =>
+      ipcRenderer.invoke(TEMPLATE_CHANNELS.LIST, { type }),
+
+    create: (name: string, category: string, content: string, templateType: 'clause' | 'annotation', userId: number, title?: string | null, description?: string | null) =>
+      ipcRenderer.invoke(TEMPLATE_CHANNELS.CREATE, { name, category, content, templateType, userId, title, description }),
+
+    update: (id: number, userId: number, data: { name?: string; category?: string; title?: string | null; content?: string; description?: string | null }) =>
+      ipcRenderer.invoke(TEMPLATE_CHANNELS.UPDATE, { id, userId, ...data }),
+
+    delete: (id: number, userId: number) =>
+      ipcRenderer.invoke(TEMPLATE_CHANNELS.DELETE, { id, userId }),
   }
 };
 

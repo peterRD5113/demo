@@ -4,7 +4,8 @@ import type { RiskRule, RiskMatch, RiskLevel } from '@shared/types';
 
 /**
  * ???? Repository
- * ?????????????
+ * ????????????
+ * ?????: name, category, description, risk_level, keywords, pattern, is_enabled
  */
 export class RiskRuleRepository extends BaseRepository<RiskRule> {
   constructor() {
@@ -12,27 +13,29 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
   }
 
   /**
-   * ??????
+   * ????
    */
   createRule(
     name: string,
     description: string,
     keywords: string[],
     riskLevel: RiskLevel,
-    pattern?: string
+    pattern?: string,
+    category?: string
   ): number {
     return this.insert({
       name,
+      category: category || '??',
       description,
       keywords: JSON.stringify(keywords),
       pattern: pattern || null,
       risk_level: riskLevel,
       is_enabled: 1,
-    } as Partial<RiskRule>);
+    } as any);
   }
 
   /**
-   * ?????????
+   * ??????
    */
   findEnabledRules(): RiskRule[] {
     const rules = this.findByCondition('is_enabled = ?', [1]);
@@ -40,7 +43,7 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
   }
 
   /**
-   * ??????????
+   * ???????
    */
   findByRiskLevel(riskLevel: RiskLevel): RiskRule[] {
     const rules = this.findByCondition('risk_level = ? AND is_enabled = ?', [riskLevel, 1]);
@@ -51,7 +54,7 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
    * ??/????
    */
   toggleRule(ruleId: number, enabled: boolean): void {
-    this.update(ruleId, { is_enabled: enabled ? 1 : 0 } as Partial<RiskRule>);
+    this.update(ruleId, { is_enabled: enabled ? 1 : 0 } as any);
   }
 
   /**
@@ -65,15 +68,17 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
       keywords?: string[];
       pattern?: string;
       riskLevel?: RiskLevel;
+      enabled?: number;
     }
   ): void {
-    const updateData: Partial<RiskRule> = {};
+    const updateData: any = {};
 
     if (data.name !== undefined) updateData.name = data.name;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.keywords !== undefined) updateData.keywords = JSON.stringify(data.keywords);
     if (data.pattern !== undefined) updateData.pattern = data.pattern;
     if (data.riskLevel !== undefined) updateData.risk_level = data.riskLevel;
+    if (data.enabled !== undefined) updateData.is_enabled = data.enabled;
 
     if (Object.keys(updateData).length > 0) {
       this.update(ruleId, updateData);
@@ -81,31 +86,39 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
   }
 
   /**
-   * ?????? JSON ????????????????
+   * ???? JSON
    */
-  private parseRule(rule: RiskRule): RiskRule {
+  private parseRule(rule: any): RiskRule {
     let keywords: string[];
-    
+
     if (typeof rule.keywords === 'string') {
-      // ????? JSON
       try {
         keywords = JSON.parse(rule.keywords);
       } catch (e) {
-        // ???? JSON???????
-        keywords = rule.keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
+        keywords = rule.keywords.split(',').map((k: string) => k.trim()).filter((k: string) => k.length > 0);
       }
     } else {
-      keywords = rule.keywords;
+      keywords = rule.keywords || [];
     }
-    
+
     return {
-      ...rule,
-      keywords
-    };
+      id: rule.id,
+      name: rule.name,
+      category: rule.category || '??',
+      description: rule.description,
+      keywords,
+      pattern: rule.pattern,
+      risk_level: rule.risk_level,
+      suggestion: rule.description,
+      enabled: rule.is_enabled === 1 || rule.is_enabled === true,
+      usage_count: rule.usage_count || 0,
+      created_at: rule.created_at,
+      updated_at: rule.updated_at,
+    } as RiskRule;
   }
 
   /**
-   * ?? ID ?????????
+   * ? ID ?????
    */
   findByIdParsed(id: number): RiskRule | null {
     const rule = this.findById(id);
@@ -113,7 +126,7 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
   }
 
   /**
-   * ???????????
+   * ?????????
    */
   findAllParsed(): RiskRule[] {
     const rules = this.findAll();
@@ -121,7 +134,7 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
   }
 
   /**
-   * ????????????
+   * ?????????
    */
   countByRiskLevel(): { risk_level: RiskLevel; count: number }[] {
     const sql = `
@@ -136,7 +149,7 @@ export class RiskRuleRepository extends BaseRepository<RiskRule> {
 
 /**
  * ???? Repository
- * ?????????????
+ * ??????????????
  */
 export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   constructor() {
@@ -144,7 +157,7 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * ????????
+   * ??????
    */
   createMatch(
     clauseId: number,
@@ -164,14 +177,14 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * ???? ID ??????
+   * ??? ID ??
    */
   findByClauseId(clauseId: number): RiskMatch[] {
     return this.findByCondition('clause_id = ?', [clauseId]);
   }
 
   /**
-   * ???? ID ????????
+   * ??? ID ??????
    */
   findByDocumentId(documentId: number): RiskMatch[] {
     const sql = `
@@ -179,7 +192,7 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
       FROM ${this.tableName} rm
       INNER JOIN clauses c ON rm.clause_id = c.id
       WHERE c.document_id = ?
-      ORDER BY 
+      ORDER BY
         CASE rm.risk_level
           WHEN 'high' THEN 1
           WHEN 'medium' THEN 2
@@ -191,7 +204,7 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * ??????????
+   * ???????
    */
   findByRiskLevel(documentId: number, riskLevel: RiskLevel): RiskMatch[] {
     const sql = `
@@ -205,21 +218,24 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * ????????
+   * ??????
    */
   adjustRiskLevel(matchId: number, newLevel: RiskLevel): void {
     this.update(matchId, { user_adjusted_level: newLevel } as Partial<RiskMatch>);
   }
 
   /**
-   * ???????????
+   * ???????
    */
   deleteByClauseId(clauseId: number): number {
-    return this.deleteByCondition('clause_id = ?', [clauseId]);
+    const sql = `DELETE FROM ${this.tableName} WHERE clause_id = ?`;
+    this.db.run(sql, [clauseId]);
+    const result = this.executeRawQueryOne<{ changes: number }>('SELECT changes() as changes');
+    return result?.changes || 0;
   }
 
   /**
-   * ???????????
+   * ???????
    */
   deleteByDocumentId(documentId: number): number {
     const sql = `
@@ -228,13 +244,13 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
         SELECT id FROM clauses WHERE document_id = ?
       )
     `;
-    const stmt = this.db.prepare(sql);
-    const result = stmt.run(documentId);
-    return result.changes;
+    this.db.run(sql, [documentId]);
+    const result = this.executeRawQueryOne<{ changes: number }>('SELECT changes() as changes');
+    return result?.changes || 0;
   }
 
   /**
-   * ??????????????
+   * ?????????
    */
   countByRiskLevel(documentId: number): { risk_level: RiskLevel; count: number }[] {
     const sql = `
@@ -248,7 +264,7 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * ????????????
+   * ?????????
    */
   countHighRiskClauses(documentId: number): number {
     const sql = `
@@ -262,14 +278,14 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * ???????????
+   * ????????
    */
   getHighestRiskLevel(clauseId: number): RiskLevel | null {
     const sql = `
       SELECT risk_level
       FROM ${this.tableName}
       WHERE clause_id = ?
-      ORDER BY 
+      ORDER BY
         CASE risk_level
           WHEN 'high' THEN 1
           WHEN 'medium' THEN 2
@@ -282,7 +298,7 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
   }
 
   /**
-   * ????????
+   * ??????
    */
   batchCreateMatches(
     matches: Array<{
@@ -293,19 +309,22 @@ export class RiskMatchRepository extends BaseRepository<RiskMatch> {
       suggestion: string;
     }>
   ): number {
-    const data = matches.map((match) => ({
-      clause_id: match.clauseId,
-      rule_id: match.ruleId,
-      risk_level: match.riskLevel,
-      matched_text: match.matchedText,
-      suggestion: match.suggestion,
-      user_adjusted_level: null,
-    }));
-
-    return this.batchInsert(data as Partial<RiskMatch>[]);
+    let count = 0;
+    for (const match of matches) {
+      this.insert({
+        clause_id: match.clauseId,
+        rule_id: match.ruleId,
+        risk_level: match.riskLevel,
+        matched_text: match.matchedText,
+        suggestion: match.suggestion,
+        user_adjusted_level: null,
+      } as Partial<RiskMatch>);
+      count++;
+    }
+    return count;
   }
 }
 
-// ??????
+// ????
 export const riskRuleRepository = new RiskRuleRepository();
 export const riskMatchRepository = new RiskMatchRepository();

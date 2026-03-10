@@ -1,0 +1,97 @@
+            {/* 右侧条款内容 */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="clauses-section">
+                <Title level={4}>
+                  合同條款 ({clauses.filter(c => c.level > 0).length} 條)
+                  {risks.length > 0 && (
+                    <Text type="secondary" style={{ fontSize: '14px', fontWeight: 'normal', marginLeft: '16px' }}>
+                      <CheckCircleOutlined /> 已完成風險識別
+                    </Text>
+                  )}
+                </Title>
+                
+                {clauses.length === 0 ? (
+                  <Empty 
+                    description="暫無條款數據，請先解析文檔" 
+                    style={{ marginTop: 40 }}
+                  />
+                ) : (
+                  <div className="clauses-list" style={{ marginTop: 16 }}>
+                    {clauses.map((clause) => {
+                      // 文档标题显示
+                      if (clause.level === -1) {
+                        return (
+                          <div 
+                            key={clause.id}
+                            id={`clause-${clause.id}`}
+                            style={{
+                              padding: '24px 32px',
+                              backgroundColor: '#fafafa',
+                              borderRadius: '4px',
+                              marginBottom: '24px',
+                              textAlign: 'center'
+                            }}
+                          >
+                            <Text strong style={{ fontSize: '24px', color: '#262626' }}>
+                              {clause.title}
+                            </Text>
+                          </div>
+                        );
+                      }
+                      
+                      // 章节显示
+                      if (clause.level === 0) {
+                        return (
+                          <div 
+                            key={clause.id}
+                            id={`clause-${clause.id}`}
+                            style={{
+                              padding: '16px 24px',
+                              backgroundColor: '#f0f5ff',
+                              borderLeft: '4px solid #1890ff',
+                              marginBottom: '16px',
+                              marginTop: '32px',
+                              borderRadius: '4px'
+                            }}
+                          >
+                            <Text strong style={{ fontSize: '18px', color: '#1890ff' }}>
+                              {clause.title}
+                            </Text>
+                          </div>
+                        );
+                      }
+                      
+                      // 条款显示
+                      const riskLevel = getRiskLevel(clause.id);
+                      const riskDescription = getRiskDescription(clause.id);
+                      
+                      return (
+                        <div 
+                          key={clause.id}
+                          id={`clause-${clause.id}`}
+                          style={{ 
+                            transition: 'background-color 0.3s',
+                            borderRadius: '4px',
+                            paddingLeft: `${(clause.level - 1) * 24}px`,
+                            marginBottom: '12px'
+                          }}
+                        >
+                          <ClauseItem
+                            clause={{
+                              ...clause,
+                              risk_level: riskLevel,
+                              risk_description: riskDescription,
+                              annotation: null
+                            }}
+                            onClick={() => handleClauseClick(clause.id)}
+                            onUpdate={handleClauseUpdate}
+                            editable={true}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>

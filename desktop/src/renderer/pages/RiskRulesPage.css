@@ -1,0 +1,54 @@
+.risk-rules-layout {
+  min-height: 100vh;
+  background: #f0f2f5;
+}
+
+.risk-rules-content {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.risk-rules-content .ant-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.risk-rules-content .ant-table {
+  background: #fff;
+}
+
+.risk-rules-content .ant-tag {
+  margin: 0;
+}
+
+/* 篩選器樣式 */
+.risk-rules-content .ant-space {
+  flex-wrap: wrap;
+}
+
+/* 操作按鈕樣式 */
+.risk-rules-content .ant-btn-link {
+  padding: 0 8px;
+  height: auto;
+}
+
+/* 表格行懸停效果 */
+.risk-rules-content .ant-table-tbody > tr:hover > td {
+  background: #fafafa;
+}
+
+/* 停用狀態的規則行 */
+.risk-rules-content .ant-table-tbody > tr.disabled-rule {
+  opacity: 0.6;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .risk-rules-content {
+    padding: 16px;
+  }
+  
+  .risk-rules-content .ant-table {
+    font-size: 12px;
+  }
+}

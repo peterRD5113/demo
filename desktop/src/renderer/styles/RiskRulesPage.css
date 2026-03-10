@@ -1,0 +1,38 @@
+/* 風險規則頁面樣式 */
+.risk-rules-layout {
+  min-height: 100vh;
+  background-color: #f0f2f5;
+}
+
+.risk-rules-content {
+  padding: 24px;
+}
+
+.risk-rules-content .ant-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.risk-rules-content .ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.risk-rules-filter-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .risk-rules-content {
+    padding: 16px;
+  }
+
+  .risk-rules-filter-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -1,0 +1,40 @@
+.form-tips {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 4px;
+}
+
+.form-tips p {
+  margin: 0 0 8px 0;
+  font-weight: 500;
+  color: #52c41a;
+}
+
+.form-tips ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.form-tips li {
+  margin: 4px 0;
+  color: #595959;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Radio 組樣式 */
+.ant-radio-group .ant-radio-wrapper {
+  margin-right: 24px;
+}
+
+/* TextArea 樣式 */
+.ant-form-item-control-input textarea {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+/* 表單項間距 */
+.ant-form-vertical .ant-form-item {
+  margin-bottom: 20px;
+}

@@ -1,147 +1,143 @@
 /**
- * Version IPC Handlers
- * 處理版本管理相關的 IPC 通信
+ * 版本管理相关 IPC 处理器
  */
 
-import { ipcMain, IpcMainInvokeEvent } from 'electron';
-import { VersionService } from '../../services/VersionService';
-import { errorHandler } from '../../middleware/errorHandler';
-import { verifyToken } from '../../middleware/authMiddleware';
+import type { IpcMain, IpcMainInvokeEvent } from 'electron';
+import { versionService } from '../../services';
 
-/**
- * 註冊版本相關的 IPC handlers
- */
-export function registerVersionHandlers(): void {
-  // 保存版本
-  ipcMain.handle(
-    'version:save',
-    errorHandler(async (event: IpcMainInvokeEvent, documentId: number, content: string, comment?: string) => {
-      const token = (event as any).token;
-      if (!token) {
-        throw new Error('未提供認證令牌');
+class VersionHandlers {
+  /**
+   * 注册所有版本管理相关的 IPC 处理器
+   */
+  register(ipcMain: IpcMain): void {
+    // 获取文档的所有版本列表
+    ipcMain.handle(
+      'version:getList',
+      async (_event: IpcMainInvokeEvent, documentId: number, userId: number) => {
+        try {
+          const versions = await versionService.getDocumentVersions(documentId, userId);
+          return {
+            success: true,
+            message: '获取版本列表成功',
+            data: versions
+          };
+        } catch (error) {
+          console.error('获取版本列表失败:', error);
+          return {
+            success: false,
+            message: error instanceof Error ? error.message : '获取版本列表失败'
+          };
+        }
       }
+    );
 
-      const payload = await verifyToken(token);
-      if (!payload) {
-        throw new Error('認證失敗');
+    // 获取最新版本信息
+    ipcMain.handle(
+      'version:getLatest',
+      async (_event: IpcMainInvokeEvent, documentId: number, userId: number) => {
+        try {
+          const version = await versionService.getLatestVersion(documentId, userId);
+          return {
+            success: true,
+            message: version ? '获取最新版本成功' : '暂无版本',
+            data: version
+          };
+        } catch (error) {
+          console.error('获取最新版本失败:', error);
+          return {
+            success: false,
+            message: error instanceof Error ? error.message : '获取最新版本失败'
+          };
+        }
       }
+    );
 
-      const result = await VersionService.saveVersion(documentId, content, payload.userId, comment);
-      return { success: true, data: result };
-    })
-  );
-
-  // 獲取文檔版本列表
-  ipcMain.handle(
-    'version:list',
-    errorHandler(async (event: IpcMainInvokeEvent, documentId: number) => {
-      const token = (event as any).token;
-      if (!token) {
-        throw new Error('未提供認證令牌');
+    // 获取指定版本的所有条款
+    ipcMain.handle(
+      'version:getClauses',
+      async (_event: IpcMainInvokeEvent, versionId: number, userId: number) => {
+        try {
+          const clauses = await versionService.getVersionClauses(versionId, userId);
+          return {
+            success: true,
+            message: '获取版本条款成功',
+            data: {
+              items: clauses,
+              total: clauses.length
+            }
+          };
+        } catch (error) {
+          console.error('获取版本条款失败:', error);
+          return {
+            success: false,
+            message: error instanceof Error ? error.message : '获取版本条款失败'
+          };
+        }
       }
+    );
 
-      const payload = await verifyToken(token);
-      if (!payload) {
-        throw new Error('認證失敗');
+    // 创建新版本
+    ipcMain.handle(
+      'version:create',
+      async (_event: IpcMainInvokeEvent, documentId: number, userId: number, changeSummary?: string) => {
+        try {
+          const result = await versionService.createVersion(documentId, userId, changeSummary);
+          return {
+            success: true,
+            message: `已保存为版本${result.version_number}`,
+            data: result
+          };
+        } catch (error) {
+          console.error('创建版本失败:', error);
+          return {
+            success: false,
+            message: error instanceof Error ? error.message : '创建版本失败'
+          };
+        }
       }
+    );
 
-      const result = await VersionService.getDocumentVersions(documentId);
-      return { success: true, data: result };
-    })
-  );
-
-  // 獲取版本詳情
-  ipcMain.handle(
-    'version:get',
-    errorHandler(async (event: IpcMainInvokeEvent, versionId: number) => {
-      const token = (event as any).token;
-      if (!token) {
-        throw new Error('未提供認證令牌');
+    // 回滚到指定版本
+    ipcMain.handle(
+      'version:rollback',
+      async (_event: IpcMainInvokeEvent, documentId: number, versionId: number, userId: number) => {
+        try {
+          await versionService.rollbackToVersion(documentId, versionId, userId);
+          return {
+            success: true,
+            message: '已回滚到指定版本'
+          };
+        } catch (error) {
+          console.error('回滚版本失败:', error);
+          return {
+            success: false,
+            message: error instanceof Error ? error.message : '回滚版本失败'
+          };
+        }
       }
+    );
 
-      const payload = await verifyToken(token);
-      if (!payload) {
-        throw new Error('認證失敗');
+    // 获取对照数据
+    ipcMain.handle(
+      'version:getComparison',
+      async (_event: IpcMainInvokeEvent, documentId: number, userId: number) => {
+        try {
+          const data = await versionService.getComparisonData(documentId, userId);
+          return {
+            success: true,
+            message: '获取对照数据成功',
+            data
+          };
+        } catch (error) {
+          console.error('获取对照数据失败:', error);
+          return {
+            success: false,
+            message: error instanceof Error ? error.message : '获取对照数据失败'
+          };
+        }
       }
-
-      const result = await VersionService.getVersionById(versionId);
-      return { success: true, data: result };
-    })
-  );
-
-  // 比較版本
-  ipcMain.handle(
-    'version:compare',
-    errorHandler(async (event: IpcMainInvokeEvent, versionId1: number, versionId2: number) => {
-      const token = (event as any).token;
-      if (!token) {
-        throw new Error('未提供認證令牌');
-      }
-
-      const payload = await verifyToken(token);
-      if (!payload) {
-        throw new Error('認證失敗');
-      }
-
-      const result = await VersionService.compareVersions(versionId1, versionId2);
-      return { success: true, data: result };
-    })
-  );
-
-  // 回滾版本
-  ipcMain.handle(
-    'version:rollback',
-    errorHandler(async (event: IpcMainInvokeEvent, versionId: number, comment?: string) => {
-      const token = (event as any).token;
-      if (!token) {
-        throw new Error('未提供認證令牌');
-      }
-
-      const payload = await verifyToken(token);
-      if (!payload) {
-        throw new Error('認證失敗');
-      }
-
-      const result = await VersionService.rollbackToVersion(versionId, payload.userId, comment);
-      return { success: true, data: result };
-    })
-  );
-
-  // 刪除版本
-  ipcMain.handle(
-    'version:delete',
-    errorHandler(async (event: IpcMainInvokeEvent, versionId: number) => {
-      const token = (event as any).token;
-      if (!token) {
-        throw new Error('未提供認證令牌');
-      }
-
-      const payload = await verifyToken(token);
-      if (!payload) {
-        throw new Error('認證失敗');
-      }
-
-      await VersionService.deleteVersion(versionId);
-      return { success: true };
-    })
-  );
-
-  // 獲取版本統計
-  ipcMain.handle(
-    'version:stats',
-    errorHandler(async (event: IpcMainInvokeEvent, documentId: number) => {
-      const token = (event as any).token;
-      if (!token) {
-        throw new Error('未提供認證令牌');
-      }
-
-      const payload = await verifyToken(token);
-      if (!payload) {
-        throw new Error('認證失敗');
-      }
-
-      const result = await VersionService.getVersionStats(documentId);
-      return { success: true, data: result };
-    })
-  );
+    );
+  }
 }
+
+export const versionHandlers = new VersionHandlers();

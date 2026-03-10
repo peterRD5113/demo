@@ -140,14 +140,16 @@ export interface Mention {
   updated_at: string;
 }
 
-// ????????
+// 條款模板
 export interface ClauseTemplate {
   id: number;
+  name: string;
   category: string;
-  title: string;
+  title: string | null;
   content: string;
-  variables: string[];
+  template_type: 'clause' | 'annotation';
   description: string | null;
+  created_by: number;
   created_at: string;
   updated_at: string;
 }

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { Layout, Menu, Dropdown, Avatar, Button, Badge } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined, HomeOutlined, BellOutlined } from '@ant-design/icons';
+import { UserOutlined, LogoutOutlined, SettingOutlined, HomeOutlined, BellOutlined, WarningOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProject } from '../contexts/ProjectContext';
@@ -52,6 +52,18 @@ const AppHeader: React.FC = () => {
       label: 'Settings',
       onClick: () => navigate('/settings'),
     },
+    ...(user?.role === 'admin' ? [{
+      key: 'risk-rules',
+      icon: <WarningOutlined />,
+      label: '風險規則管理',
+      onClick: () => navigate('/risk-rules'),
+    },
+    {
+      key: 'templates',
+      icon: <FileTextOutlined />,
+      label: '模板管理',
+      onClick: () => navigate('/templates'),
+    }] : []),
     {
       type: 'divider',
     },

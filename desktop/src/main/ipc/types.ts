@@ -233,14 +233,14 @@ export interface GetRiskRequest {
 }
 
 export interface ListRisksRequest {
-  projectId: number;
+  documentId: number;
   userId: number;
   page?: number;
   pageSize?: number;
 }
 
 export interface GetRisksByLevelRequest {
-  projectId: number;
+  documentId: number;
   userId: number;
   level: 'high' | 'medium' | 'low';
   page?: number;

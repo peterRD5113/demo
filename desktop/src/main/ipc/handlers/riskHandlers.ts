@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 風險識別 IPC 處理器
  */
 
@@ -83,7 +83,7 @@ class RiskHandlers {
       async (_event: IpcMainInvokeEvent, request: ListRisksRequest): Promise<IPCResponse<IPCListResponse<RiskMatch>>> => {
         try {
           const result = await riskService.getDocumentRisks(
-            request.projectId,
+            request.documentId,
             request.userId
           );
           
@@ -113,7 +113,7 @@ class RiskHandlers {
       async (_event: IpcMainInvokeEvent, request: GetRisksByLevelRequest): Promise<IPCResponse<IPCListResponse<RiskMatch>>> => {
         try {
           const result = await riskService.getRisksByLevel(
-            request.projectId,
+            request.documentId,
             request.userId,
             request.level
           );
@@ -270,9 +270,10 @@ class RiskHandlers {
           const result = await riskService.createRule(
             request.name,
             request.description,
-            request.category ? [request.category] : [],
+            [],
             request.pattern,
-            request.riskLevel
+            request.riskLevel,
+            request.category
           );
           
           if (result.success && result.ruleId) {
@@ -306,7 +307,8 @@ class RiskHandlers {
             name: request.name,
             pattern: request.pattern,
             riskLevel: request.risk_level,
-            description: request.description
+            description: request.description,
+            enabled: (request as any).enabled
           });
           
           if (result.success) {

@@ -8,9 +8,12 @@ import LoginPage from './pages/LoginPage';
 import ProjectListPage from './pages/ProjectListPage';
 import DocumentListPage from './pages/DocumentListPage';
 import DocumentReviewPage from './pages/DocumentReviewPage';
+import ReviewComparisonPage from './pages/ReviewComparisonPage';
+import TemplatesPage from './pages/TemplatesPage';
 import UnreadMentionsPage from './pages/UnreadMentionsPage';
 import VersionManagementPage from './pages/VersionManagementPage';
 import SettingsPage from './pages/SettingsPage';
+import RiskRulesPage from './pages/RiskRulesPage';
 import PrivateRoute from './components/PrivateRoute';
 import './styles/App.css';
 
@@ -69,6 +72,14 @@ const App: React.FC = () => {
               }
             />
             <Route
+              path="/document/:documentId/comparison"
+              element={
+                <PrivateRoute>
+                  <ReviewComparisonPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
               path="/mentions"
               element={
                 <PrivateRoute>
@@ -89,6 +100,22 @@ const App: React.FC = () => {
               element={
                 <PrivateRoute>
                   <SettingsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/risk-rules"
+              element={
+                <PrivateRoute>
+                  <RiskRulesPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/templates"
+              element={
+                <PrivateRoute>
+                  <TemplatesPage />
                 </PrivateRoute>
               }
             />

@@ -66,10 +66,10 @@ class AuthService {
         };
       }
 
-      // Verify password
-      const isPasswordValid = userRepository.verifyPassword(username, password);
+      // Verify password - verifyPassword returns User | null
+      const verifiedUser = userRepository.verifyPassword(username, password);
       
-      if (!isPasswordValid) {
+      if (!verifiedUser) {
         // Increment login attempts
         const attempts = userRepository.incrementLoginAttempts(user.id);
         
@@ -91,17 +91,17 @@ class AuthService {
       }
 
       // Login successful - reset login attempts
-      userRepository.resetLoginAttempts(user.id);
+      userRepository.resetLoginAttempts(verifiedUser.id);
 
       // Generate tokens
-      const token = this.generateToken(user);
-      const refreshToken = this.generateRefreshToken(user);
+      const token = this.generateToken(verifiedUser);
+      const refreshToken = this.generateRefreshToken(verifiedUser);
 
       // Update last login time
-      userRepository.updateLastLogin(user.id);
+      userRepository.updateLastLogin(verifiedUser.id);
 
       // Return user info (without password)
-      const userResponse = userRepository.getUserResponse(user);
+      const userResponse = userRepository.getUserResponse(verifiedUser);
 
       return {
         success: true,
@@ -204,7 +204,8 @@ class AuthService {
         };
       }
 
-      if (user.is_locked) {
+      // Use isAccountLocked() to dynamically check locked_until timestamp
+      if (userRepository.isAccountLocked(user.id)) {
         return {
           success: false,
           message: 'Account is locked'

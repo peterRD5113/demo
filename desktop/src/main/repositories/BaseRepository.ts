@@ -187,6 +187,21 @@ export abstract class BaseRepository<T> {
   }
 
   /**
+   * Delete records by condition
+   */
+  deleteByCondition(where: string, params: unknown[]): number {
+    try {
+      const sql = `DELETE FROM ${this.tableName} WHERE ${where}`;
+      this.db.run(sql, params as any[]);
+      const result = this.execQueryOne('SELECT changes() as changes') as { changes: number };
+      return result.changes;
+    } catch (error) {
+      console.error(`Delete by condition ${this.tableName} failed:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Soft delete (set deleted_at field)
    */
   softDelete(id: number): number {
@@ -228,6 +243,20 @@ export abstract class BaseRepository<T> {
       return !!result;
     } catch (error) {
       console.error(`Check ${this.tableName} existence failed:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if record exists by condition
+   */
+  existsByCondition(where: string, params: unknown[]): boolean {
+    try {
+      const sql = `SELECT 1 FROM ${this.tableName} WHERE ${where} LIMIT 1`;
+      const result = this.execQueryOne(sql, params);
+      return !!result;
+    } catch (error) {
+      console.error(`Check ${this.tableName} existence by condition failed:`, error);
       throw error;
     }
   }

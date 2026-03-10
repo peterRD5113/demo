@@ -10,10 +10,12 @@ import { documentHandlers } from './handlers/documentHandlers';
 import { clauseHandlers } from './handlers/clauseHandlers';
 import { riskHandlers } from './handlers/riskHandlers';
 import { annotationHandlers } from './handlers/annotationHandlers';
-import { registerVersionHandlers } from './handlers/versionHandlers';
+import { versionHandlers } from './handlers/versionHandlers';
 import { registerExportHandlers } from './handlers/exportHandlers';
 import { fileHandlers } from './handlers/fileHandlers';
 import { systemHandlers } from './handlers/systemHandlers';
+
+import { templateHandlers } from './handlers/templateHandlers';
 
 /**
  * Register all IPC handlers
@@ -40,7 +42,7 @@ export function registerIPCHandlers(): void {
   annotationHandlers.register(ipcMain);
 
   // Register version handlers
-  registerVersionHandlers();
+  versionHandlers.register(ipcMain);
 
   // Register export handlers
   registerExportHandlers();
@@ -50,6 +52,9 @@ export function registerIPCHandlers(): void {
 
   // Register system handlers
   systemHandlers.register(ipcMain);
+
+  // Register template handlers
+  templateHandlers.register(ipcMain);
 
   console.log('IPC handlers registered successfully');
 }

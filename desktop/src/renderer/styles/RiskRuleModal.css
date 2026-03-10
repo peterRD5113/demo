@@ -1,0 +1,14 @@
+/* 風險規則 Modal 樣式 */
+.risk-rule-modal .ant-modal-body {
+  padding: 24px;
+}
+
+.risk-rule-modal .ant-form-item-label > label {
+  font-weight: 500;
+}
+
+.risk-rule-modal .ant-select,
+.risk-rule-modal .ant-input,
+.risk-rule-modal .ant-input-textarea {
+  border-radius: 6px;
+}

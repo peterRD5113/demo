@@ -1,4 +1,4 @@
-﻿import { BaseRepository } from './BaseRepository';
+import { BaseRepository } from './BaseRepository';
 import type { Clause } from '@shared/types';
 
 /**
@@ -101,10 +101,13 @@ export class ClauseRepository extends BaseRepository<Clause> {
   }
 
   /**
-   * 刪除文檔的所有條款
+   * 刪除文檔的所有條款（物理刪除，clauses 表無 deleted_at 欄位）
    */
   deleteByDocumentId(documentId: number): number {
-    const clauses = this.findByDocumentId(documentId); for (const clause of clauses) { this.softDelete(clause.id); } return clauses.length;
+    const count = this.count('document_id = ?', [documentId]);
+    const sql = `DELETE FROM ${this.tableName} WHERE document_id = ?`;
+    this.db.run(sql, [documentId]);
+    return count;
   }
 
   /**

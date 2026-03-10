@@ -15,5 +15,6 @@ export {
   riskMatchRepository,
 } from './RiskRepository';
 
-// �O�W�G���F�V��ݮe�AriskRepository ���V riskRuleRepository
+// 向後相容：riskRepository 指向 riskRuleRepository
 export { riskRuleRepository as riskRepository } from './RiskRepository';
+export { TemplateRepository, templateRepository } from './TemplateRepository';

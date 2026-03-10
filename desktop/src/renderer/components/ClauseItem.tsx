@@ -1,6 +1,6 @@
 // @ts-nocheck
-import React, { useState } from 'react';
-import { Card, Tag, Space, Button, Input, message } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Tag, Space, Button, Input, message, Dropdown, Modal } from 'antd';
 import {
   WarningOutlined,
   ExclamationCircleOutlined,
@@ -9,6 +9,7 @@ import {
   EditOutlined,
   SaveOutlined,
   CloseOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/ClauseItem.css';
@@ -22,7 +23,10 @@ interface Clause {
   content: string;
   risk_level: string | null;
   risk_description: string | null;
+  suggestion: string | null;
+  matched_text: string | null;
   annotation: string | null;
+  commentCount?: number;
 }
 
 interface ClauseItemProps {
@@ -30,19 +34,63 @@ interface ClauseItemProps {
   onClick: () => void;
   onUpdate?: () => void;
   editable?: boolean;
+  onCommentClick?: (clauseId: number) => void;
+  isCommentActive?: boolean;
+  showCommentButton?: boolean;
 }
 
 const ClauseItem: React.FC<ClauseItemProps> = ({ 
   clause, 
   onClick, 
   onUpdate,
-  editable = true 
+  editable = true,
+  onCommentClick,
+  isCommentActive = false,
+  showCommentButton = false
 }) => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(clause.title || '');
   const [editedContent, setEditedContent] = useState(clause.content);
   const [isSaving, setIsSaving] = useState(false);
+  const [clauseTemplates, setClauseTemplates] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (isEditing) {
+      loadClauseTemplates();
+    }
+  }, [isEditing]);
+
+  const loadClauseTemplates = async () => {
+    try {
+      const res = await window.electronAPI.template.list('clause');
+      if (res.success && res.data?.items) {
+        setClauseTemplates(res.data.items);
+      }
+    } catch (e) {
+      // 靜默失敗，不影響編輯功能
+    }
+  };
+
+  const handleInsertTemplate = (tpl: any) => {
+    const hasTitle = editedTitle.trim().length > 0;
+    const hasContent = editedContent.trim().length > 0;
+    if (hasTitle || hasContent) {
+      Modal.confirm({
+        title: '插入模板',
+        content: '插入模板將取代現有的標題與內容，確定繼續嗎？',
+        okText: '確定取代',
+        cancelText: '取消',
+        onOk: () => {
+          setEditedTitle(tpl.title || '');
+          setEditedContent(tpl.content);
+        },
+      });
+    } else {
+      setEditedTitle(tpl.title || '');
+      setEditedContent(tpl.content);
+    }
+  };
 
   const getRiskIcon = (level: string | null) => {
     if (!level) return null;
@@ -149,6 +197,48 @@ const ClauseItem: React.FC<ClauseItemProps> = ({
     }
   };
 
+  // Render clause content with matched text highlighted
+  const renderHighlightedContent = (
+    content: string,
+    matchedText: string | null,
+    riskLevel: string | null
+  ) => {
+    if (!matchedText || !riskLevel) {
+      return content;
+    }
+
+    // matchedText from DB is the first 200 chars of clause content;
+    // find any sub-segment that overlaps with what was stored
+    const highlightMap: Record<string, string> = {
+      high: 'highlight-high',
+      medium: 'highlight-medium',
+      low: 'highlight-low',
+    };
+    const cls = highlightMap[riskLevel] || '';
+
+    // Try to find the matched segment inside content
+    const matchedTrimmed = matchedText.trim();
+    const idx = content.indexOf(matchedTrimmed);
+    if (idx === -1) {
+      // If not found verbatim, just highlight the whole content block with a wrapper
+      return (
+        <span className={`content-highlight-block ${cls}`}>{content}</span>
+      );
+    }
+
+    const before = content.slice(0, idx);
+    const highlighted = content.slice(idx, idx + matchedTrimmed.length);
+    const after = content.slice(idx + matchedTrimmed.length);
+
+    return (
+      <>
+        {before}
+        <span className={`content-highlight ${cls}`}>{highlighted}</span>
+        {after}
+      </>
+    );
+  };
+
   return (
     <Card
       className={`clause-item ${clause.risk_level ? `risk-${clause.risk_level}` : ''} ${isEditing ? 'editing' : ''}`}
@@ -156,30 +246,77 @@ const ClauseItem: React.FC<ClauseItemProps> = ({
       onClick={handleCardClick}
     >
       <div className="clause-header">
-        <Space>
-          <span className="clause-number">{clause.clause_number}</span>
-          {getRiskTag(clause.risk_level)}
-          {clause.annotation && (
-            <Tag icon={<CommentOutlined />} color="blue">
-              有批註
-            </Tag>
-          )}
-        </Space>
+        <div className="clause-header-left">
+          <Space>
+            <span className="clause-number">{clause.clause_number}</span>
+            {getRiskTag(clause.risk_level)}
+          </Space>
+        </div>
         
-        {editable && !isEditing && (
-          <Button
-            type="text"
-            icon={<EditOutlined />}
-            onClick={handleEdit}
-            className="edit-button"
-          >
-            編輯
-          </Button>
+        {!isEditing && (
+          <div className="clause-header-right">
+            <Space size="small">
+              {showCommentButton && onCommentClick && (
+                <Button
+                  type="text"
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCommentClick(clause.id);
+                  }}
+                  className={`comment-button ${isCommentActive ? 'active' : ''}`}
+                >
+                  批注({clause.commentCount || 0})
+                  {isCommentActive && ' ✓'}
+                </Button>
+              )}
+              
+              {editable && (
+                <Button
+                  type="text"
+                  size="small"
+                  onClick={handleEdit}
+                  className="edit-button"
+                >
+                  编辑
+                </Button>
+              )}
+            </Space>
+          </div>
         )}
       </div>
 
       {isEditing ? (
         <div className="clause-edit-mode" onClick={(e) => e.stopPropagation()}>
+          {/* 插入模板工具列 */}
+          {clauseTemplates.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <Dropdown
+                menu={{
+                  items: (() => {
+                    const categories = Array.from(new Set(clauseTemplates.map((t: any) => t.category)));
+                    return categories.map((cat: any) => ({
+                      key: cat,
+                      label: cat,
+                      children: clauseTemplates
+                        .filter((t: any) => t.category === cat)
+                        .map((t: any) => ({
+                          key: String(t.id),
+                          label: t.name,
+                          onClick: () => handleInsertTemplate(t),
+                        })),
+                    }));
+                  })()
+                }}
+                trigger={['click']}
+              >
+                <Button size="small" icon={<FileTextOutlined />}>
+                  插入模板
+                </Button>
+              </Dropdown>
+            </div>
+          )}
+
           {/* 標題編輯器 */}
           <Input
             value={editedTitle}
@@ -231,7 +368,7 @@ const ClauseItem: React.FC<ClauseItemProps> = ({
             </div>
           )}
           <div className="clause-content">
-            {clause.content}
+            {renderHighlightedContent(clause.content, clause.matched_text, clause.risk_level)}
           </div>
         </div>
       )}
@@ -239,6 +376,13 @@ const ClauseItem: React.FC<ClauseItemProps> = ({
       {clause.risk_description && !isEditing && (
         <div className="clause-risk-hint">
           <WarningOutlined /> {clause.risk_description}
+        </div>
+      )}
+
+      {clause.suggestion && !isEditing && (
+        <div className="clause-suggestion">
+          <div className="clause-suggestion-label">💡 建議措辭</div>
+          <div className="clause-suggestion-content">{clause.suggestion}</div>
         </div>
       )}
     </Card>
