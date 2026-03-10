@@ -173,6 +173,30 @@ function createTables(): void {
   )`);
   db.run('CREATE INDEX IF NOT EXISTS idx_templates_category ON clause_templates(category)');
   db.run('CREATE INDEX IF NOT EXISTS idx_templates_type ON clause_templates(template_type)');
+
+  // project_members 表
+  db.run(`CREATE TABLE IF NOT EXISTS project_members (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    invited_by INTEGER REFERENCES users(id),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(project_id, user_id)
+  )`);
+  db.run('CREATE INDEX IF NOT EXISTS idx_project_members_project ON project_members(project_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_project_members_user ON project_members(user_id)');
+
+  // annotation_mentions 表
+  db.run(`CREATE TABLE IF NOT EXISTS annotation_mentions (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    annotation_id     INTEGER NOT NULL REFERENCES annotations(id) ON DELETE CASCADE,
+    mentioned_user_id INTEGER NOT NULL REFERENCES users(id),
+    status            TEXT DEFAULT 'pending' CHECK(status IN ('pending','read','resolved')),
+    created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(annotation_id, mentioned_user_id)
+  )`);
+  db.run('CREATE INDEX IF NOT EXISTS idx_annotation_mentions_user ON annotation_mentions(mentioned_user_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_annotation_mentions_annotation ON annotation_mentions(annotation_id)');
 }
 
 function initializeDefaultData(): void {
@@ -403,6 +427,38 @@ function migrateDatabase(): void {
       db.run('CREATE INDEX IF NOT EXISTS idx_templates_category ON clause_templates(category)');
       db.run('CREATE INDEX IF NOT EXISTS idx_templates_type ON clause_templates(template_type)');
       console.log('Migration: created clause_templates table');
+    }
+
+    // project_members migration
+    const pmCheck = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='project_members'");
+    if (pmCheck.length === 0 || pmCheck[0].values.length === 0) {
+      db.run(`CREATE TABLE IF NOT EXISTS project_members (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        invited_by INTEGER REFERENCES users(id),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(project_id, user_id)
+      )`);
+      db.run('CREATE INDEX IF NOT EXISTS idx_project_members_project ON project_members(project_id)');
+      db.run('CREATE INDEX IF NOT EXISTS idx_project_members_user ON project_members(user_id)');
+      console.log('Migration: 建立 project_members 表');
+    }
+
+    // annotation_mentions migration
+    const amCheck = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='annotation_mentions'");
+    if (amCheck.length === 0 || amCheck[0].values.length === 0) {
+      db.run(`CREATE TABLE IF NOT EXISTS annotation_mentions (
+        id                INTEGER PRIMARY KEY AUTOINCREMENT,
+        annotation_id     INTEGER NOT NULL REFERENCES annotations(id) ON DELETE CASCADE,
+        mentioned_user_id INTEGER NOT NULL REFERENCES users(id),
+        status            TEXT DEFAULT 'pending' CHECK(status IN ('pending','read','resolved')),
+        created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(annotation_id, mentioned_user_id)
+      )`);
+      db.run('CREATE INDEX IF NOT EXISTS idx_annotation_mentions_user ON annotation_mentions(mentioned_user_id)');
+      db.run('CREATE INDEX IF NOT EXISTS idx_annotation_mentions_annotation ON annotation_mentions(annotation_id)');
+      console.log('Migration: 建立 annotation_mentions 表');
     }
   } catch (error) {
     console.error('Database migration failed:', error);

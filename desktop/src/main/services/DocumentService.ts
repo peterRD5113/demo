@@ -58,7 +58,7 @@ class DocumentService {
       validateEnum(data.fileType, 'File type', FILE_TYPES);
 
       // Check project permission
-      if (!projectRepository.isOwnedByUser(data.projectId, data.userId)) {
+      if (!projectRepository.isMemberOrOwner(data.projectId, data.userId)) {
         return {
           success: false,
           message: 'No permission to create document in this project'
@@ -179,7 +179,7 @@ class DocumentService {
       }
 
       // Check project permission
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         console.error('No permission to access this document');
         return null;
       }
@@ -207,7 +207,7 @@ class DocumentService {
       validatePagination(page, pageSize);
 
       // Check project permission
-      if (!projectRepository.isOwnedByUser(projectId, userId)) {
+      if (!projectRepository.isMemberOrOwner(projectId, userId)) {
         return {
           documents: [],
           total: 0
@@ -261,7 +261,7 @@ class DocumentService {
       }
 
       // Check project permission
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         return {
           success: false,
           message: 'No permission to modify this document'
@@ -313,7 +313,7 @@ class DocumentService {
       }
 
       // Check project permission
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         return {
           success: false,
           message: 'No permission to delete this document'
@@ -401,7 +401,7 @@ class DocumentService {
       validatePagination(page, pageSize);
 
       // Check project permission
-      if (!projectRepository.isOwnedByUser(projectId, userId)) {
+      if (!projectRepository.isMemberOrOwner(projectId, userId)) {
         return {
           documents: [],
           total: 0
@@ -442,7 +442,7 @@ class DocumentService {
       validatePagination(page, pageSize);
 
       // Check project permission
-      if (!projectRepository.isOwnedByUser(projectId, userId)) {
+      if (!projectRepository.isMemberOrOwner(projectId, userId)) {
         return {
           documents: [],
           total: 0
@@ -481,7 +481,7 @@ class DocumentService {
       }
 
       // Check project permission
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         console.error('No permission to access this document');
         return null;
       }

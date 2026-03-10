@@ -233,6 +233,33 @@ class AnnotationHandlers {
       }
     );
 
+    // 搜尋可以被 @ 的使用者
+    ipcMain.handle(
+      ANNOTATION_CHANNELS.SEARCH_USERS,
+      async (_event: IpcMainInvokeEvent, request: {
+        keyword: string;
+        currentUserId: number;
+      }): Promise<IPCResponse<any[]>> => {
+        try {
+          const users = await annotationService.searchUsers(
+            request.keyword,
+            request.currentUserId
+          );
+          return {
+            success: true,
+            message: '搜尋成功',
+            data: users
+          };
+        } catch (error) {
+          console.error('搜尋使用者失敗:', error);
+          return {
+            success: false,
+            message: error instanceof Error ? error.message : '搜尋使用者失敗'
+          };
+        }
+      }
+    );
+
     // 標記 mention 為已讀
     ipcMain.handle(
       ANNOTATION_CHANNELS.MARK_MENTION_READ,

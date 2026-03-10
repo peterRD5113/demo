@@ -44,7 +44,7 @@ class ClauseService {
       }
 
       // 檢查項目權限
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         console.error('No permission to access this document');
         return {
           clauses: [],
@@ -104,7 +104,7 @@ class ClauseService {
       }
 
       // 檢查項目權限
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         console.error('No permission to access this clause');
         return null;
       }
@@ -150,7 +150,7 @@ class ClauseService {
       }
 
       // 檢查項目權限
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         return {
           success: false,
           message: 'No permission to modify this clause'
@@ -214,7 +214,7 @@ class ClauseService {
       }
 
       // 檢查項目權限
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         return {
           success: false,
           message: 'No permission to modify this clause'
@@ -269,7 +269,7 @@ class ClauseService {
       }
 
       // 檢查項目權限
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         console.error('No permission to search clauses in this document');
         return {
           clauses: [],
@@ -327,7 +327,7 @@ class ClauseService {
       }
 
       // 檢查項目權限
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         console.error('No permission to access this document');
         return null;
       }

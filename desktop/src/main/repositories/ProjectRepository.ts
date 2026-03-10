@@ -159,6 +159,59 @@ export class ProjectRepository extends BaseRepository<Project> {
     `;
     return this.executeRawQuery<Project>(sql, [userId, limit]);
   }
+
+  /**
+   * 查詢用戶可以存取的所有專案（擁有者或成員）
+   */
+  findAccessibleByUserIdWithPagination(
+    userId: number,
+    page: number,
+    pageSize: number
+  ): { list: Project[]; total: number; page: number; pageSize: number } {
+    const offset = (page - 1) * pageSize;
+    const sql = `
+      SELECT DISTINCT p.* FROM projects p
+      LEFT JOIN project_members pm ON p.id = pm.project_id
+      WHERE (p.user_id = ? OR pm.user_id = ?)
+        AND p.deleted_at IS NULL
+      ORDER BY p.updated_at DESC
+      LIMIT ? OFFSET ?
+    `;
+    const list = this.executeRawQuery<Project>(sql, [userId, userId, pageSize, offset]);
+    const countSql = `
+      SELECT COUNT(DISTINCT p.id) as cnt FROM projects p
+      LEFT JOIN project_members pm ON p.id = pm.project_id
+      WHERE (p.user_id = ? OR pm.user_id = ?)
+        AND p.deleted_at IS NULL
+    `;
+    const countResult = this.executeRawQueryOne<{ cnt: number }>(countSql, [userId, userId]);
+    const total = countResult ? countResult.cnt : 0;
+    return { list, total, page, pageSize };
+  }
+
+  /**
+   * 新增專案成員（被 @ 時自動加入）
+   */
+  addMember(projectId: number, userId: number, invitedBy: number): void {
+    this.db.run(
+      'INSERT OR IGNORE INTO project_members (project_id, user_id, invited_by) VALUES (?, ?, ?)',
+      [projectId, userId, invitedBy]
+    );
+  }
+
+  /**
+   * 檢查用戶是否為專案擁有者或成員
+   */
+  isMemberOrOwner(projectId: number, userId: number): boolean {
+    const project = this.findById(projectId);
+    if (!project) return false;
+    if ((project as any).user_id === userId) return true;
+    const result = this.executeRawQueryOne<{ cnt: number }>(
+      'SELECT COUNT(*) as cnt FROM project_members WHERE project_id = ? AND user_id = ?',
+      [projectId, userId]
+    );
+    return !!(result && result.cnt > 0);
+  }
 }
 
 // 導出單例實例

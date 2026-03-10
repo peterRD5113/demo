@@ -91,8 +91,8 @@ class AnnotationService {
         };
       }
 
-      // 檢查項目權限
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      // 檢查項目權限（擁有者或成員皆可）
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         return {
           success: false,
           message: 'No permission to annotate this clause'
@@ -114,6 +114,30 @@ class AnnotationService {
       const annotationId = result[0].values[0][0] as number;
 
       console.log('Annotation created with ID:', annotationId);
+
+      // 解析 @username，寫入 annotation_mentions 並自動加入專案成員
+      const mentionPattern = /@(\w+)/g;
+      let match: RegExpExecArray | null;
+      while ((match = mentionPattern.exec(content)) !== null) {
+        const mentionedUsername = match[1];
+        const userRows = getDb().exec(
+          'SELECT id FROM users WHERE username = ?',
+          [mentionedUsername]
+        );
+        if (userRows.length > 0 && userRows[0].values.length > 0) {
+          const mentionedUserId = userRows[0].values[0][0] as number;
+          // 寫入 annotation_mentions
+          getDb().run(
+            'INSERT OR IGNORE INTO annotation_mentions (annotation_id, mentioned_user_id, status) VALUES (?, ?, \'pending\')',
+            [annotationId, mentionedUserId]
+          );
+          // 自動加入專案成員
+          projectRepository.addMember(document.project_id, mentionedUserId, userId);
+          console.log(`@mention 處理完成：${mentionedUsername}（id=${mentionedUserId}）已加入專案 ${document.project_id}`);
+        } else {
+          console.log(`@mention 找不到使用者：${mentionedUsername}，略過`);
+        }
+      }
 
       return {
         success: true,
@@ -167,8 +191,8 @@ class AnnotationService {
         };
       }
 
-      // 檢查項目權限
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      // 檢查項目權限（擁有者或成員皆可）
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         return {
           annotations: [],
           total: 0
@@ -408,32 +432,135 @@ class AnnotationService {
 
   /**
    * 獲取用戶的待確認列表（被 @ 的批註）
-   * 注意：mentions 表不存在，返回空列表
    */
   async getUserMentions(
     userId: number,
     projectId: number
   ): Promise<{ mentions: any[]; total: number }> {
-    // mentions 表不存在，直接返回空列表
-    return {
-      mentions: [],
-      total: 0
-    };
+    try {
+      // projectId 為 0 時查詢所有專案的 mentions
+      const sql = projectId > 0
+        ? `
+        SELECT
+          am.id,
+          am.annotation_id,
+          am.mentioned_user_id,
+          am.status,
+          am.created_at,
+          a.content        AS annotation_content,
+          a.type           AS annotation_type,
+          u.username       AS author_username,
+          c.id             AS clause_id,
+          c.clause_number,
+          c.content        AS clause_content,
+          d.id             AS document_id,
+          d.name           AS document_name,
+          p.id             AS project_id,
+          p.name           AS project_name
+        FROM annotation_mentions am
+        JOIN annotations a  ON am.annotation_id = a.id
+        JOIN users u        ON a.user_id = u.id
+        JOIN clauses c      ON a.clause_id = c.id
+        JOIN documents d    ON c.document_id = d.id
+        JOIN projects p     ON d.project_id = p.id
+        WHERE am.mentioned_user_id = ?
+          AND p.id = ?
+          AND a.status != 'deleted'
+        ORDER BY am.created_at DESC
+      `
+        : `
+        SELECT
+          am.id,
+          am.annotation_id,
+          am.mentioned_user_id,
+          am.status,
+          am.created_at,
+          a.content        AS annotation_content,
+          a.type           AS annotation_type,
+          u.username       AS author_username,
+          c.id             AS clause_id,
+          c.clause_number,
+          c.content        AS clause_content,
+          d.id             AS document_id,
+          d.name           AS document_name,
+          p.id             AS project_id,
+          p.name           AS project_name
+        FROM annotation_mentions am
+        JOIN annotations a  ON am.annotation_id = a.id
+        JOIN users u        ON a.user_id = u.id
+        JOIN clauses c      ON a.clause_id = c.id
+        JOIN documents d    ON c.document_id = d.id
+        JOIN projects p     ON d.project_id = p.id
+        WHERE am.mentioned_user_id = ?
+          AND a.status != 'deleted'
+        ORDER BY am.created_at DESC
+      `;
+      const params = projectId > 0 ? [userId, projectId] : [userId];
+      const results = getDb().exec(sql, params);
+      if (results.length === 0) {
+        return { mentions: [], total: 0 };
+      }
+      const { columns, values } = results[0];
+      const mentions = values.map(row => {
+        const obj: any = {};
+        columns.forEach((col, idx) => { obj[col] = row[idx]; });
+        return obj;
+      });
+      return { mentions, total: mentions.length };
+    } catch (error) {
+      console.error('Get user mentions failed:', error);
+      return { mentions: [], total: 0 };
+    }
+  }
+
+  /**
+   * 搜尋可以被 @ 的使用者（排除自己）
+   */
+  async searchUsers(
+    keyword: string,
+    currentUserId: number
+  ): Promise<{ id: number; username: string; display_name: string }[]> {
+    try {
+      const sql = `
+        SELECT id, username, display_name
+        FROM users
+        WHERE id != ?
+          AND (username LIKE ? OR display_name LIKE ?)
+        ORDER BY username ASC
+        LIMIT 10
+      `;
+      const pattern = `%${keyword}%`;
+      const results = getDb().exec(sql, [currentUserId, pattern, pattern]);
+      if (results.length === 0) return [];
+      const { columns, values } = results[0];
+      return values.map(row => {
+        const obj: any = {};
+        columns.forEach((col, idx) => { obj[col] = row[idx]; });
+        return obj;
+      });
+    } catch (error) {
+      console.error('Search users failed:', error);
+      return [];
+    }
   }
 
   /**
    * 標記 mention 為已讀
-   * 注意：mentions 表不存在，返回成功
    */
   async markMentionAsRead(
     mentionId: number,
     userId: number
   ): Promise<{ success: boolean; message: string }> {
-    // mentions 表不存在，直接返回成功
-    return {
-      success: true,
-      message: 'Mention marked as read'
-    };
+    try {
+      getDb().run(
+        "UPDATE annotation_mentions SET status = 'read' WHERE id = ? AND mentioned_user_id = ?",
+        [mentionId, userId]
+      );
+      return { success: true, message: '已標記為已讀' };
+    } catch (error) {
+      console.error('Mark mention as read failed:', error);
+      return { success: false, message: '標記失敗' };
+    }
   }
 }
 

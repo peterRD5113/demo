@@ -46,29 +46,34 @@ const UnreadMentionsPage: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'pending' | 'read'>('pending');
 
   useEffect(() => {
-    if (user && currentProject) {
+    if (user) {
       loadMentions();
+    } else {
+      setLoading(false);
     }
-  }, [user, currentProject, filter]);
+  }, [user, filter]);
 
   const loadMentions = async () => {
-    if (!user || !currentProject) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
       const result = await window.electronAPI.annotation.getMentions(
         user.id,
-        currentProject.id
+        0
       );
 
-      if (result.success && result.data) {
-        let filteredMentions = result.data;
+      if (result.success && result.data && result.data.items) {
+        let filteredMentions = result.data.items;
         
         // 根據過濾條件篩選
         if (filter === 'pending') {
-          filteredMentions = result.data.filter((m: Mention) => m.status === 'pending');
+          filteredMentions = result.data.items.filter((m: Mention) => m.status === 'pending');
         } else if (filter === 'read') {
-          filteredMentions = result.data.filter((m: Mention) => m.status === 'read');
+          filteredMentions = result.data.items.filter((m: Mention) => m.status === 'read');
         }
         
         setMentions(filteredMentions);

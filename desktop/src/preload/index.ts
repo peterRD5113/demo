@@ -71,7 +71,8 @@ const ANNOTATION_CHANNELS = {
   DELETE: 'annotation:delete',
   RESOLVE: 'annotation:resolve',
   GET_MENTIONS: 'annotation:get-mentions',
-  MARK_MENTION_READ: 'annotation:mark-mention-read'
+  MARK_MENTION_READ: 'annotation:mark-mention-read',
+  SEARCH_USERS: 'annotation:search-users'
 };
 
 const FILE_CHANNELS = {
@@ -262,7 +263,10 @@ const api = {
       ipcRenderer.invoke(ANNOTATION_CHANNELS.GET_MENTIONS, { userId, projectId }),
     
     markMentionRead: (mentionId: number, userId: number) =>
-      ipcRenderer.invoke(ANNOTATION_CHANNELS.MARK_MENTION_READ, { mentionId, userId })
+      ipcRenderer.invoke(ANNOTATION_CHANNELS.MARK_MENTION_READ, { mentionId, userId }),
+
+    searchUsers: (keyword: string, currentUserId: number) =>
+      ipcRenderer.invoke(ANNOTATION_CHANNELS.SEARCH_USERS, { keyword, currentUserId })
   },
 
   // ============= 文件操作 API =============

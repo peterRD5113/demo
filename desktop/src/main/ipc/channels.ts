@@ -73,7 +73,8 @@ export const ANNOTATION_CHANNELS = {
   DELETE: 'annotation:delete',
   RESOLVE: 'annotation:resolve',
   GET_MENTIONS: 'annotation:get-mentions',
-  MARK_MENTION_READ: 'annotation:mark-mention-read'
+  MARK_MENTION_READ: 'annotation:mark-mention-read',
+  SEARCH_USERS: 'annotation:search-users'
 } as const;
 
 // 文件操作相關通道

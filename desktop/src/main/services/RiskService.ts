@@ -67,7 +67,7 @@ class RiskService {
 
       // Check project permission
       const projectId = document.project_id;
-      if (!projectRepository.isOwnedByUser(projectId, userId)) {
+      if (!projectRepository.isMemberOrOwner(projectId, userId)) {
         return {
           success: false,
           message: 'No permission to access this document'
@@ -183,7 +183,7 @@ class RiskService {
       }
 
       // Check project permission
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         return {
           risks: [],
           total: 0
@@ -230,7 +230,7 @@ class RiskService {
       }
 
       // Check project permission
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         return {
           risks: [],
           total: 0
@@ -294,7 +294,7 @@ class RiskService {
       }
 
       // Check project permission
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         return {
           success: false,
           message: 'No permission to modify this risk'
@@ -344,7 +344,7 @@ class RiskService {
       }
 
       // Check project permission
-      if (!projectRepository.isOwnedByUser(document.project_id, userId)) {
+      if (!projectRepository.isMemberOrOwner(document.project_id, userId)) {
         return null;
       }
 

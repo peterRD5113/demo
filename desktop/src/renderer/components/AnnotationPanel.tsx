@@ -45,6 +45,12 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
   const [editContent, setEditContent] = useState('');
   const [annotationTemplates, setAnnotationTemplates] = useState<any[]>([]);
   const [templateModalVisible, setTemplateModalVisible] = useState(false);
+  // @ 提及相關狀態
+  const [mentionKeyword, setMentionKeyword] = useState('');
+  const [mentionUsers, setMentionUsers] = useState<any[]>([]);
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false);
+  const [mentionStartIndex, setMentionStartIndex] = useState(-1);
+  const textAreaRef = React.useRef<any>(null);
 
   useEffect(() => {
     if (isAdding && annotationTemplates.length === 0) {
@@ -66,6 +72,63 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
   const handleInsertAnnotationTemplate = (content: string) => {
     setNewContent(prev => prev ? prev + '\n' + content : content);
     setTemplateModalVisible(false);
+  };
+
+  // 處理輸入框內容變更，偵測 @ 符號
+  const handleContentChange = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setNewContent(value);
+
+    const cursor = e.target.selectionStart;
+    // 往前找最近的 @ 符號
+    const textBeforeCursor = value.slice(0, cursor);
+    const atIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (atIndex !== -1) {
+      const keyword = textBeforeCursor.slice(atIndex + 1);
+      // keyword 中不能有空格（表示 @ 已結束）
+      if (!keyword.includes(' ') && keyword.length <= 20) {
+        setMentionStartIndex(atIndex);
+        setMentionKeyword(keyword);
+        setShowMentionDropdown(true);
+        // 搜尋使用者
+        if (user) {
+          try {
+            const result = await window.electronAPI.annotation.searchUsers(keyword, user.id);
+            if (result.success && result.data) {
+              setMentionUsers(result.data);
+            }
+          } catch (e) {
+            setMentionUsers([]);
+          }
+        }
+        return;
+      }
+    }
+    setShowMentionDropdown(false);
+    setMentionUsers([]);
+  };
+
+  // 選擇 mention 使用者
+  const handleSelectMentionUser = (username: string) => {
+    const before = newContent.slice(0, mentionStartIndex);
+    const after = newContent.slice(mentionStartIndex + 1 + mentionKeyword.length);
+    const newVal = `${before}@${username} ${after}`;
+    setNewContent(newVal);
+    setShowMentionDropdown(false);
+    setMentionUsers([]);
+    setMentionKeyword('');
+    // 讓 textarea 重新 focus
+    setTimeout(() => {
+      if (textAreaRef.current) {
+        const pos = (before + '@' + username + ' ').length;
+        const input = textAreaRef.current.resizableTextArea?.textArea;
+        if (input) {
+          input.focus();
+          input.setSelectionRange(pos, pos);
+        }
+      }
+    }, 0);
   };
 
   useEffect(() => {
@@ -426,12 +489,38 @@ const AnnotationPanel: React.FC<AnnotationPanelProps> = ({ clauseId, visible, on
                 )}
 
                 <TextArea
+                  ref={textAreaRef}
                   value={newContent}
-                  onChange={(e) => setNewContent(e.target.value)}
+                  onChange={handleContentChange}
                   rows={4}
                   placeholder="輸入備註內容，使用 @username 提及他人"
-                  style={{ marginBottom: 12 }}
+                  style={{ marginBottom: showMentionDropdown ? 0 : 12 }}
                 />
+                {/* @ 使用者下拉選單 */}
+                {showMentionDropdown && mentionUsers.length > 0 && (
+                  <div className="mention-dropdown">
+                    {mentionUsers.map((u: any) => (
+                      <div
+                        key={u.id}
+                        className="mention-dropdown-item"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSelectMentionUser(u.username);
+                        }}
+                      >
+                        <span className="mention-dropdown-username">@{u.username}</span>
+                        {u.display_name && u.display_name !== u.username && (
+                          <span className="mention-dropdown-displayname">{u.display_name}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {showMentionDropdown && mentionUsers.length === 0 && mentionKeyword.length > 0 && (
+                  <div className="mention-dropdown">
+                    <div className="mention-dropdown-empty">找不到使用者「{mentionKeyword}」</div>
+                  </div>
+                )}
                 <div className="annotation-form-actions">
                   <Space>
                     <Button type="primary" onClick={handleAdd}>

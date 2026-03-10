@@ -86,8 +86,8 @@ class ProjectService {
       validatePositiveInteger(projectId, 'Project ID');
       validatePositiveInteger(userId, 'User ID');
 
-      // ????
-      if (!projectRepository.isOwnedByUser(projectId, userId)) {
+      // 擁有者或成員皆可存取
+      if (!projectRepository.isMemberOrOwner(projectId, userId)) {
         console.error('No permission to access this project');
         return null;
       }
@@ -112,7 +112,7 @@ class ProjectService {
       validatePositiveInteger(userId, 'User ID');
       validatePagination(page, pageSize);
 
-      const result = projectRepository.findByUserIdWithPagination(userId, page, pageSize);
+      const result = projectRepository.findAccessibleByUserIdWithPagination(userId, page, pageSize);
 
       return {
         projects: result.list,
@@ -246,8 +246,8 @@ class ProjectService {
       validatePositiveInteger(userId, 'User ID');
       validateRequiredString(password, 'Password', 1, 50);
 
-      // ????
-      if (!projectRepository.isOwnedByUser(projectId, userId)) {
+      // 擁有者或成員皆可驗證密碼
+      if (!projectRepository.isMemberOrOwner(projectId, userId)) {
         return {
           success: false,
           message: 'No permission to access this project'
