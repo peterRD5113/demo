@@ -89,7 +89,9 @@ const SYSTEM_CHANNELS = {
   GET_APP_PATH: 'system:get-app-path',
   OPEN_EXTERNAL: 'system:open-external',
   SHOW_MESSAGE: 'system:show-message',
-  SHOW_ERROR: 'system:show-error'
+  SHOW_ERROR: 'system:show-error',
+  GET_CACHE_INFO: 'system:get-cache-info',
+  CLEAR_CACHE: 'system:clear-cache'
 };
 
 const TEMPLATE_CHANNELS = {
@@ -332,7 +334,17 @@ const api = {
       ipcRenderer.invoke(SYSTEM_CHANNELS.SHOW_MESSAGE, { type, title, message, buttons }),
     
     showError: (title: string, content: string) =>
-      ipcRenderer.invoke(SYSTEM_CHANNELS.SHOW_ERROR, { title, content })
+      ipcRenderer.invoke(SYSTEM_CHANNELS.SHOW_ERROR, { title, content }),
+
+    getCacheInfo: () =>
+      ipcRenderer.invoke(SYSTEM_CHANNELS.GET_CACHE_INFO),
+
+    clearCache: (options: {
+      clearAuditLogs: boolean;
+      clearDeletedProjects: boolean;
+      clearRiskMatches: boolean;
+    }) =>
+      ipcRenderer.invoke(SYSTEM_CHANNELS.CLEAR_CACHE, options)
   },
 
   // ============= 模板 API =============

@@ -2,12 +2,13 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Layout, Card, Spin, message, Typography, Divider, Empty, Tag, Button, Space, Modal, Input, Select } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
-import { WarningOutlined, CheckCircleOutlined, HistoryOutlined, DownloadOutlined, SaveOutlined, SwapOutlined, MenuFoldOutlined, MenuUnfoldOutlined, SyncOutlined } from '@ant-design/icons';
+import { WarningOutlined, CheckCircleOutlined, HistoryOutlined, DownloadOutlined, SaveOutlined, SwapOutlined, MenuFoldOutlined, MenuUnfoldOutlined, SyncOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import AppHeader from '../components/AppHeader';
 import ClauseItem from '../components/ClauseItem';
 import AnnotationPanel from '../components/AnnotationPanel';
 import ExportModal from '../components/ExportModal';
+import { maskSensitiveText } from '../utils/maskSensitiveText';
 import '../styles/DocumentReviewPage.css';
 
 const { Content } = Layout;
@@ -64,6 +65,7 @@ const DocumentReviewPage: React.FC = () => {
   const [latestVersion, setLatestVersion] = useState<any>(null);
   const [versionClauses, setVersionClauses] = useState<Clause[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMasked, setIsMasked] = useState(false);
   // 對照版本選擇相關
   const [versionList, setVersionList] = useState<any[]>([]);
   const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null);
@@ -509,6 +511,13 @@ const DocumentReviewPage: React.FC = () => {
                 重新識別風險
               </Button>
               <Button
+                type={isMasked ? 'primary' : 'default'}
+                icon={isMasked ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                onClick={() => setIsMasked(prev => !prev)}
+              >
+                {isMasked ? '脫敏中' : '脫敏預覽'}
+              </Button>
+              <Button
                 type={isComparisonMode ? 'primary' : 'default'}
                 icon={<SwapOutlined />}
                 onClick={toggleComparisonMode}
@@ -766,10 +775,11 @@ const DocumentReviewPage: React.FC = () => {
                             <ClauseItem
                               clause={{
                                 ...clause,
+                                content: isMasked ? maskSensitiveText(clause.content) : clause.content,
                                 risk_level: riskLevel,
                                 risk_description: riskDescription,
                                 suggestion: riskSuggestion,
-                                matched_text: riskMatchedText,
+                                matched_text: isMasked ? null : riskMatchedText,
                                 annotation: null,
                                 commentCount: annotationCounts.get(clause.id) || 0
                               }}
@@ -1004,10 +1014,11 @@ const DocumentReviewPage: React.FC = () => {
                             <ClauseItem
                               clause={{
                                 ...clause,
+                                content: isMasked ? maskSensitiveText(clause.content) : clause.content,
                                 risk_level: riskLevel,
                                 risk_description: riskDescription,
                                 suggestion: riskSuggestion,
-                                matched_text: riskMatchedText,
+                                matched_text: isMasked ? null : riskMatchedText,
                                 annotation: null,
                                 commentCount: annotationCounts.get(clause.id) || 0
                               }}

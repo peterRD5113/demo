@@ -93,7 +93,9 @@ export const SYSTEM_CHANNELS = {
   GET_APP_PATH: 'system:get-app-path',
   OPEN_EXTERNAL: 'system:open-external',
   SHOW_MESSAGE: 'system:show-message',
-  SHOW_ERROR: 'system:show-error'
+  SHOW_ERROR: 'system:show-error',
+  GET_CACHE_INFO: 'system:get-cache-info',
+  CLEAR_CACHE: 'system:clear-cache'
 } as const;
 
 // 模板相關通道
