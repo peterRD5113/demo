@@ -298,6 +298,9 @@ const api = {
     getLatest: (documentId: number, userId: number) =>
       ipcRenderer.invoke('version:getLatest', documentId, userId),
     
+    getPrevious: (documentId: number, userId: number) =>
+      ipcRenderer.invoke('version:getPrevious', documentId, userId),
+    
     getClauses: (versionId: number, userId: number) =>
       ipcRenderer.invoke('version:getClauses', versionId, userId),
     
@@ -308,7 +311,10 @@ const api = {
       ipcRenderer.invoke('version:rollback', documentId, versionId, userId),
     
     getComparison: (documentId: number, userId: number) =>
-      ipcRenderer.invoke('version:getComparison', documentId, userId)
+      ipcRenderer.invoke('version:getComparison', documentId, userId),
+
+    delete: (versionId: number, userId: number) =>
+      ipcRenderer.invoke('version:delete', versionId, userId)
   },
 
   // ============= 系統 API =============
@@ -342,6 +348,18 @@ const api = {
 
     delete: (id: number, userId: number) =>
       ipcRenderer.invoke(TEMPLATE_CHANNELS.DELETE, { id, userId }),
+  },
+
+  // ============= 導出 API =============
+  export: {
+    pdf: (documentId: number, includeAnnotations: boolean, includeRisks: boolean) =>
+      ipcRenderer.invoke('export:pdf', documentId, includeAnnotations, includeRisks),
+
+    docx: (documentId: number, includeAnnotations: boolean, includeRisks: boolean, userId: number = 0) =>
+      ipcRenderer.invoke('export:docx', documentId, includeAnnotations, includeRisks, userId),
+
+    report: (documentId: number, userId: number) =>
+      ipcRenderer.invoke('export:report', documentId, userId),
   }
 };
 

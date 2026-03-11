@@ -83,6 +83,20 @@ class VersionService {
     `, [documentId]);
   }
 
+  async getPreviousVersion(documentId: number, userId: number): Promise<DocumentVersion | null> {
+    validatePositiveInteger(documentId, 'Document ID');
+    validatePositiveInteger(userId, 'User ID');
+    // 取版本號第二大的版本（次新版本）
+    return queryGet(`
+      SELECT v.*, u.display_name as creator_name
+      FROM document_versions v
+      LEFT JOIN users u ON v.created_by = u.id
+      WHERE v.document_id = ?
+      ORDER BY v.version_number DESC
+      LIMIT 1 OFFSET 1
+    `, [documentId]);
+  }
+
   async getVersionClauses(versionId: number, userId: number): Promise<VersionClause[]> {
     validatePositiveInteger(versionId, 'Version ID');
     validatePositiveInteger(userId, 'User ID');
@@ -117,7 +131,7 @@ class VersionService {
     db.run(`
       INSERT INTO version_clauses (version_id, clause_number, title, content, level, original_clause_id)
       SELECT ?, clause_number, title, content, level, id
-      FROM clauses WHERE document_id = ? ORDER BY id
+      FROM clauses WHERE document_id = ? ORDER BY order_index ASC, id ASC
     `, [versionId, documentId]);
 
     db.run(`
@@ -141,14 +155,36 @@ class VersionService {
 
     if (!version) throw notFoundError('版本不存在');
 
-    db.run('DELETE FROM clauses WHERE document_id = ?', [documentId]);
-    db.run(`
-      INSERT INTO clauses (document_id, clause_number, title, content, level)
-      SELECT ?, clause_number, title, content, level
-      FROM version_clauses WHERE version_id = ? ORDER BY id
-    `, [documentId, versionId]);
-    db.run('UPDATE document_versions SET is_current = 0 WHERE document_id = ?', [documentId]);
-    db.run('UPDATE document_versions SET is_current = 1 WHERE id = ?', [versionId]);
+    db.run('SAVEPOINT rollback_op');
+    try {
+      db.run('DELETE FROM clauses WHERE document_id = ?', [documentId]);
+      db.run(`
+        INSERT INTO clauses (document_id, clause_number, title, content, level, order_index)
+        SELECT ?, clause_number, title, content, level,
+               (ROW_NUMBER() OVER (ORDER BY id)) - 1
+        FROM version_clauses WHERE version_id = ? ORDER BY id
+      `, [documentId, versionId]);
+      db.run('UPDATE document_versions SET is_current = 0 WHERE document_id = ?', [documentId]);
+      db.run('UPDATE document_versions SET is_current = 1 WHERE id = ?', [versionId]);
+      db.run('RELEASE SAVEPOINT rollback_op');
+    } catch (e) {
+      db.run('ROLLBACK TO SAVEPOINT rollback_op');
+      throw e;
+    }
+  }
+
+  async deleteVersion(versionId: number, userId: number): Promise<void> {
+    validatePositiveInteger(versionId, 'Version ID');
+    validatePositiveInteger(userId, 'User ID');
+
+    const db = getDb();
+
+    const version = queryGet('SELECT * FROM document_versions WHERE id = ?', [versionId]);
+    if (!version) throw notFoundError('版本不存在');
+    if (version.is_current === 1) throw new Error('無法刪除當前使用中的版本');
+
+    db.run('DELETE FROM version_clauses WHERE version_id = ?', [versionId]);
+    db.run('DELETE FROM document_versions WHERE id = ?', [versionId]);
   }
 
   async getComparisonData(documentId: number, userId: number): Promise<{

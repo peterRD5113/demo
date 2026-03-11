@@ -36,7 +36,7 @@ export class DocumentRepository extends BaseRepository<Document> {
    * 根據項目 ID 查詢文檔列表
    */
   findByProjectId(projectId: number): Document[] {
-    return this.findByCondition('project_id = ?', [projectId]);
+    return this.findByCondition('project_id = ? AND deleted_at IS NULL', [projectId]);
   }
 
   /**
@@ -52,7 +52,7 @@ export class DocumentRepository extends BaseRepository<Document> {
     page: number;
     pageSize: number;
   } {
-    const result = this.findWithPagination(page, pageSize, 'project_id = ?', [projectId]);
+    const result = this.findWithPagination(page, pageSize, 'project_id = ? AND deleted_at IS NULL', [projectId]);
     
     const documentsWithRiskCount = result.list.map(doc => {
       const riskCountResult = this.db.exec(`
@@ -111,14 +111,14 @@ export class DocumentRepository extends BaseRepository<Document> {
    * 獲取項目的文檔數量
    */
   countByProjectId(projectId: number): number {
-    return this.count('project_id = ?', [projectId]);
+    return this.count('project_id = ? AND deleted_at IS NULL', [projectId]);
   }
 
   /**
    * 搜索文檔（按名稱）
    */
   searchByName(projectId: number, keyword: string): Document[] {
-    return this.findByCondition('project_id = ? AND name LIKE ?', [projectId, `%${keyword}%`]);
+    return this.findByCondition('project_id = ? AND deleted_at IS NULL AND name LIKE ?', [projectId, `%${keyword}%`]);
   }
 
   /**
@@ -127,7 +127,7 @@ export class DocumentRepository extends BaseRepository<Document> {
   findRecentDocuments(projectId: number, limit: number): Document[] {
     const sql = `
       SELECT * FROM ${this.tableName}
-      WHERE project_id = ?
+      WHERE project_id = ? AND deleted_at IS NULL
       ORDER BY updated_at DESC
       LIMIT ?
     `;

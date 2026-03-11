@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { Layout, Card, Button, Table, message, Modal, Form, Input } from 'antd';
-import { PlusOutlined, FolderOpenOutlined } from '@ant-design/icons';
+import { Layout, Card, Button, Table, message, Modal, Form, Input, Popconfirm, Space } from 'antd';
+import { PlusOutlined, FolderOpenOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import AppHeader from '../components/AppHeader';
@@ -14,6 +14,7 @@ interface Project {
   name: string;
   description: string;
   created_at: string;
+  user_id: number;
 }
 
 const ProjectListPage: React.FC = () => {
@@ -26,6 +27,17 @@ const ProjectListPage: React.FC = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  // 從 token 取得當前登入的 userId
+  const getCurrentUserId = (): number => {
+    if (!token) return 0;
+    try {
+      return JSON.parse(atob(token.split('.')[1])).userId;
+    } catch {
+      return 0;
+    }
+  };
 
   useEffect(() => {
     loadProjects();
@@ -118,6 +130,26 @@ const ProjectListPage: React.FC = () => {
     }
   };
 
+  const handleDeleteProject = async (projectId: number) => {
+    if (!token) return;
+    const userId = getCurrentUserId();
+    setDeletingId(projectId);
+    try {
+      const response = await window.electronAPI.project.delete(projectId, userId);
+      if (response.success) {
+        message.success('專案已刪除');
+        loadProjects();
+      } else {
+        message.error(response.message || '刪除專案失敗');
+      }
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      message.error('刪除專案失敗');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const handleVerifyPassword = async (values: { password: string }) => {
     if (!token || !selectedProjectId) return;
 
@@ -167,13 +199,34 @@ const ProjectListPage: React.FC = () => {
       title: 'Actions',
       key: 'actions',
       render: (_: any, record: Project) => (
-        <Button
-          type="link"
-          icon={<FolderOpenOutlined />}
-          onClick={() => handleOpenProject(record.id)}
-        >
-          Open
-        </Button>
+        <Space>
+          <Button
+            type="link"
+            icon={<FolderOpenOutlined />}
+            onClick={() => handleOpenProject(record.id)}
+          >
+            Open
+          </Button>
+          {record.user_id === getCurrentUserId() && (
+            <Popconfirm
+              title="確定刪除此專案？"
+              description="專案內所有文件將一併移除，此操作不可復原。"
+              onConfirm={() => handleDeleteProject(record.id)}
+              okText="確定刪除"
+              cancelText="取消"
+              okButtonProps={{ danger: true }}
+            >
+              <Button
+                type="link"
+                danger
+                icon={<DeleteOutlined />}
+                loading={deletingId === record.id}
+              >
+                刪除
+              </Button>
+            </Popconfirm>
+          )}
+        </Space>
       ),
     },
   ];

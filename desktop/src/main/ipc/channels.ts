@@ -104,6 +104,17 @@ export const TEMPLATE_CHANNELS = {
   DELETE: 'template:delete',
 } as const;
 
+// 版本管理相關通道
+export const VERSION_CHANNELS = {
+  GET_LIST:       'version:getList',
+  GET_LATEST:     'version:getLatest',
+  GET_CLAUSES:    'version:getClauses',
+  CREATE:         'version:create',
+  ROLLBACK:       'version:rollback',
+  GET_COMPARISON: 'version:getComparison',
+  DELETE:         'version:delete',
+} as const;
+
 // 所有通道的聯合類型
 export type IPCChannel =
   | typeof AUTH_CHANNELS[keyof typeof AUTH_CHANNELS]
@@ -114,4 +125,5 @@ export type IPCChannel =
   | typeof ANNOTATION_CHANNELS[keyof typeof ANNOTATION_CHANNELS]
   | typeof FILE_CHANNELS[keyof typeof FILE_CHANNELS]
   | typeof SYSTEM_CHANNELS[keyof typeof SYSTEM_CHANNELS]
-  | typeof TEMPLATE_CHANNELS[keyof typeof TEMPLATE_CHANNELS];
+  | typeof TEMPLATE_CHANNELS[keyof typeof TEMPLATE_CHANNELS]
+  | typeof VERSION_CHANNELS[keyof typeof VERSION_CHANNELS];

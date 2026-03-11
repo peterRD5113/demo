@@ -19,215 +19,155 @@ import {
 import {
   HistoryOutlined,
   SaveOutlined,
-  SwapOutlined,
   RollbackOutlined,
   DeleteOutlined,
-  EyeOutlined,
   ArrowLeftOutlined,
+  UserOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons';
+import { useAuth } from '../contexts/AuthContext';
 import './VersionManagementPage.css';
 
 const { TextArea } = Input;
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 interface DocumentVersion {
   id: number;
   document_id: number;
   version_number: number;
-  content: string;
   created_by: number;
-  comment?: string;
-  created_at: string;
   creator_name?: string;
-}
-
-interface VersionStats {
-  total_versions: number;
-  latest_version: number;
-  first_created: string;
-  last_created: string;
-}
-
-interface CompareResult {
-  version1: DocumentVersion;
-  version2: DocumentVersion;
-  differences: {
-    added: string[];
-    removed: string[];
-    modified: string[];
-  };
+  change_summary: string | null;
+  is_current: number;
+  created_at: string;
 }
 
 const VersionManagementPage: React.FC = () => {
   const { documentId } = useParams<{ documentId: string }>();
   const navigate = useNavigate();
+  const { token } = useAuth();
 
   const [versions, setVersions] = useState<DocumentVersion[]>([]);
-  const [stats, setStats] = useState<VersionStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [saveModalVisible, setSaveModalVisible] = useState(false);
-  const [compareModalVisible, setCompareModalVisible] = useState(false);
-  const [viewModalVisible, setViewModalVisible] = useState(false);
   const [saveComment, setSaveComment] = useState('');
-  const [selectedVersion, setSelectedVersion] = useState<DocumentVersion | null>(null);
-  const [compareVersions, setCompareVersions] = useState<{
-    version1?: number;
-    version2?: number;
-  }>({});
-  const [compareResult, setCompareResult] = useState<CompareResult | null>(null);
+  const [savingVersion, setSavingVersion] = useState(false);
 
-  useEffect(() => {
-    if (documentId) {
-      loadVersions();
-      loadStats();
-    }
-  }, [documentId]);
-
-  const loadVersions = async () => {
-    setLoading(true);
+  const getUserId = (): number => {
+    if (!token) return 0;
     try {
-      const result = await window.electron.ipcRenderer.invoke(
-        'version:list',
-        parseInt(documentId!)
-      );
-      if (result.success) {
-        setVersions(result.data);
-      } else {
-        message.error(result.message || '????????');
-      }
-    } catch (error: any) {
-      message.error(error.message || '????????');
-    } finally {
-      setLoading(false);
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.userId || 0;
+    } catch {
+      return 0;
     }
   };
 
-  const loadStats = async () => {
+  useEffect(() => {
+    if (documentId && token) {
+      loadVersions();
+    }
+  }, [documentId, token]);
+
+  const loadVersions = async () => {
+    if (!documentId) return;
+    setLoading(true);
     try {
-      const result = await window.electron.ipcRenderer.invoke(
-        'version:stats',
-        parseInt(documentId!)
+      const userId = getUserId();
+      const result = await window.electronAPI.version.getList(
+        parseInt(documentId),
+        userId
       );
       if (result.success) {
-        setStats(result.data);
+        setVersions(result.data || []);
+      } else {
+        message.error(result.message || '載入版本列表失敗');
       }
     } catch (error: any) {
-      console.error('????????:', error);
+      message.error(error.message || '載入版本列表失敗');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSaveVersion = async () => {
     if (!saveComment.trim()) {
-      message.warning('???????');
+      message.warning('請輸入變更摘要');
       return;
     }
+    if (!documentId) return;
 
-    setLoading(true);
+    setSavingVersion(true);
     try {
-      // ????????????
-      // ???????????????
-      const content = '??????'; // TODO: ??????
-
-      const result = await window.electron.ipcRenderer.invoke(
-        'version:save',
-        parseInt(documentId!),
-        content,
-        saveComment
+      const userId = getUserId();
+      const result = await window.electronAPI.version.create(
+        parseInt(documentId),
+        userId,
+        saveComment.trim()
       );
-
       if (result.success) {
-        message.success('??????');
+        message.success(`已儲存為版本 v${result.data?.version_number}`);
         setSaveModalVisible(false);
         setSaveComment('');
-        loadVersions();
-        loadStats();
+        await loadVersions();
       } else {
-        message.error(result.message || '??????');
+        message.error(result.message || '儲存版本失敗');
       }
     } catch (error: any) {
-      message.error(error.message || '??????');
+      message.error(error.message || '儲存版本失敗');
     } finally {
-      setLoading(false);
+      setSavingVersion(false);
     }
   };
 
-  const handleViewVersion = async (version: DocumentVersion) => {
-    setSelectedVersion(version);
-    setViewModalVisible(true);
-  };
-
-  const handleCompareVersions = async () => {
-    if (!compareVersions.version1 || !compareVersions.version2) {
-      message.warning('???????????');
-      return;
-    }
-
+  const handleRollback = async (version: DocumentVersion) => {
+    if (!documentId) return;
     setLoading(true);
     try {
-      const result = await window.electron.ipcRenderer.invoke(
-        'version:compare',
-        compareVersions.version1,
-        compareVersions.version2
+      const userId = getUserId();
+      const result = await window.electronAPI.version.rollback(
+        parseInt(documentId),
+        version.id,
+        userId
       );
       if (result.success) {
-        setCompareResult(result.data);
+        message.success(`已回滾至版本 v${version.version_number}`);
+        await loadVersions();
       } else {
-        message.error(result.message || '??????');
+        message.error(result.message || '回滾失敗');
       }
     } catch (error: any) {
-      message.error(error.message || '??????');
+      message.error(error.message || '回滾失敗');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRollback = async (versionId: number, versionNumber: number) => {
+  const handleDelete = async (version: DocumentVersion) => {
     setLoading(true);
     try {
-      const result = await window.electron.ipcRenderer.invoke(
-        'version:rollback',
-        versionId,
-        `????? ${versionNumber}`
+      const userId = getUserId();
+      const result = await window.electronAPI.version.delete(
+        version.id,
+        userId
       );
-
       if (result.success) {
-        message.success('??????');
-        loadVersions();
-        loadStats();
+        message.success('版本已刪除');
+        await loadVersions();
       } else {
-        message.error(result.message || '??????');
+        message.error(result.message || '刪除失敗');
       }
     } catch (error: any) {
-      message.error(error.message || '??????');
+      message.error(error.message || '刪除失敗');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteVersion = async (versionId: number) => {
-    setLoading(true);
-    try {
-      const result = await window.electron.ipcRenderer.invoke('version:delete', versionId);
-      if (result.success) {
-        message.success('??????');
-        loadVersions();
-        loadStats();
-      } else {
-        message.error(result.message || '??????');
-      }
-    } catch (error: any) {
-      message.error(error.message || '??????');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleCompareVersion = (versionId: number, slot: 'version1' | 'version2') => {
-    setCompareVersions((prev) => ({
-      ...prev,
-      [slot]: prev[slot] === versionId ? undefined : versionId,
-    }));
-  };
+  const totalVersions = versions.length;
+  const latestVersionNumber = versions.length > 0 ? versions[0].version_number : 0;
+  const firstCreated = versions.length > 0 ? versions[versions.length - 1].created_at : null;
+  const lastCreated = versions.length > 0 ? versions[0].created_at : null;
 
   return (
     <div className="version-management-page">
@@ -237,63 +177,55 @@ const VersionManagementPage: React.FC = () => {
           onClick={() => navigate(-1)}
           style={{ marginRight: 16 }}
         >
-          ??
+          返回
         </Button>
         <Title level={2} style={{ margin: 0 }}>
-          <HistoryOutlined /> ????
+          <HistoryOutlined style={{ marginRight: 8 }} />
+          版本管理
         </Title>
       </div>
 
-      {stats && (
+      {totalVersions > 0 && (
         <Card className="stats-card" size="small">
           <Space size="large">
             <div>
-              <Text type="secondary">?????</Text>
-              <Text strong>{stats.total_versions}</Text>
+              <Text type="secondary">版本總數：</Text>
+              <Text strong>{totalVersions}</Text>
             </div>
             <Divider type="vertical" />
             <div>
-              <Text type="secondary">?????</Text>
-              <Text strong>v{stats.latest_version}</Text>
+              <Text type="secondary">最新版本：</Text>
+              <Text strong>v{latestVersionNumber}</Text>
             </div>
             <Divider type="vertical" />
             <div>
-              <Text type="secondary">?????</Text>
-              <Text>{new Date(stats.first_created).toLocaleString()}</Text>
+              <Text type="secondary">首次建立：</Text>
+              <Text>{firstCreated ? new Date(firstCreated).toLocaleString() : '-'}</Text>
             </div>
             <Divider type="vertical" />
             <div>
-              <Text type="secondary">?????</Text>
-              <Text>{new Date(stats.last_created).toLocaleString()}</Text>
+              <Text type="secondary">最後更新：</Text>
+              <Text>{lastCreated ? new Date(lastCreated).toLocaleString() : '-'}</Text>
             </div>
           </Space>
         </Card>
       )}
 
       <Card
-        title="????"
+        title="版本列表"
         extra={
-          <Space>
-            <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              onClick={() => setSaveModalVisible(true)}
-            >
-              ?????
-            </Button>
-            <Button
-              icon={<SwapOutlined />}
-              onClick={() => setCompareModalVisible(true)}
-              disabled={versions.length < 2}
-            >
-              ????
-            </Button>
-          </Space>
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            onClick={() => setSaveModalVisible(true)}
+          >
+            儲存目前版本
+          </Button>
         }
       >
         <Spin spinning={loading}>
           {versions.length === 0 ? (
-            <Empty description="??????" />
+            <Empty description="尚無版本記錄，請先儲存版本" />
           ) : (
             <List
               dataSource={versions}
@@ -301,41 +233,52 @@ const VersionManagementPage: React.FC = () => {
                 <List.Item
                   key={version.id}
                   actions={[
-                    <Tooltip title="????">
-                      <Button
-                        type="link"
-                        icon={<EyeOutlined />}
-                        onClick={() => handleViewVersion(version)}
-                      />
-                    </Tooltip>,
                     <Popconfirm
-                      title="???????????"
-                      onConfirm={() => handleRollback(version.id, version.version_number)}
-                      okText="??"
-                      cancelText="??"
+                      key="rollback"
+                      title={`確定要回滾至版本 v${version.version_number} 嗎？`}
+                      description="回滾後目前的條款內容將被覆蓋"
+                      onConfirm={() => handleRollback(version)}
+                      okText="確定"
+                      cancelText="取消"
+                      disabled={version.is_current === 1}
                     >
-                      <Tooltip title="??????">
-                        <Button type="link" icon={<RollbackOutlined />} />
+                      <Tooltip title={version.is_current === 1 ? '目前使用中的版本' : '回滾至此版本'}>
+                        <Button
+                          type="link"
+                          icon={<RollbackOutlined />}
+                          disabled={version.is_current === 1}
+                        >
+                          回滾
+                        </Button>
                       </Tooltip>
                     </Popconfirm>,
                     <Popconfirm
-                      title="??????????"
-                      onConfirm={() => handleDeleteVersion(version.id)}
-                      okText="??"
-                      cancelText="??"
-                      disabled={versions.length <= 1}
+                      key="delete"
+                      title={`確定要刪除版本 v${version.version_number} 嗎？`}
+                      description="刪除後無法復原"
+                      onConfirm={() => handleDelete(version)}
+                      okText="刪除"
+                      okType="danger"
+                      cancelText="取消"
+                      disabled={version.is_current === 1 || versions.length <= 1}
                     >
                       <Tooltip
                         title={
-                          versions.length <= 1 ? '??????????' : '????'
+                          version.is_current === 1
+                            ? '無法刪除目前使用中的版本'
+                            : versions.length <= 1
+                            ? '至少保留一個版本'
+                            : '刪除此版本'
                         }
                       >
                         <Button
                           type="link"
                           danger
                           icon={<DeleteOutlined />}
-                          disabled={versions.length <= 1}
-                        />
+                          disabled={version.is_current === 1 || versions.length <= 1}
+                        >
+                          刪除
+                        </Button>
                       </Tooltip>
                     </Popconfirm>,
                   ]}
@@ -344,20 +287,28 @@ const VersionManagementPage: React.FC = () => {
                     title={
                       <Space>
                         <Tag color="blue">v{version.version_number}</Tag>
-                        {version.version_number === stats?.latest_version && (
-                          <Tag color="green">??</Tag>
+                        {version.is_current === 1 && (
+                          <Tag color="green">目前版本</Tag>
                         )}
-                        <Text strong>{version.comment || '???'}</Text>
+                        <Text strong>
+                          {version.change_summary || '（無變更摘要）'}
+                        </Text>
                       </Space>
                     }
                     description={
-                      <Space direction="vertical" size={0}>
-                        <Text type="secondary">
-                          ????{version.creator_name || '??'}
-                        </Text>
-                        <Text type="secondary">
-                          ?????{new Date(version.created_at).toLocaleString()}
-                        </Text>
+                      <Space direction="vertical" size={2}>
+                        <Space>
+                          <UserOutlined />
+                          <Text type="secondary">
+                            審閱人：{version.creator_name || '未知'}
+                          </Text>
+                        </Space>
+                        <Space>
+                          <CalendarOutlined />
+                          <Text type="secondary">
+                            儲存時間：{new Date(version.created_at).toLocaleString()}
+                          </Text>
+                        </Space>
                       </Space>
                     }
                   />
@@ -368,216 +319,30 @@ const VersionManagementPage: React.FC = () => {
         </Spin>
       </Card>
 
-      {/* ??????? */}
       <Modal
-        title="?????"
+        title="儲存目前版本"
         open={saveModalVisible}
         onOk={handleSaveVersion}
         onCancel={() => {
           setSaveModalVisible(false);
           setSaveComment('');
         }}
-        okText="??"
-        cancelText="??"
-        confirmLoading={loading}
+        okText="儲存"
+        cancelText="取消"
+        confirmLoading={savingVersion}
       >
+        <div style={{ marginBottom: 8 }}>
+          <Text>請輸入本次版本的變更摘要（審閱重點、修改說明等）：</Text>
+        </div>
         <TextArea
           rows={4}
-          placeholder="???????????"
+          placeholder="例如：修正第三條付款條款措辭、新增不可抗力定義..."
           value={saveComment}
           onChange={(e) => setSaveComment(e.target.value)}
           maxLength={200}
           showCount
+          autoFocus
         />
-      </Modal>
-
-      {/* ????????? */}
-      <Modal
-        title={`?? v${selectedVersion?.version_number} - ${selectedVersion?.comment || '???'}`}
-        open={viewModalVisible}
-        onCancel={() => {
-          setViewModalVisible(false);
-          setSelectedVersion(null);
-        }}
-        footer={[
-          <Button key="close" onClick={() => setViewModalVisible(false)}>
-            ??
-          </Button>,
-        ]}
-        width={800}
-      >
-        {selectedVersion && (
-          <div>
-            <Space direction="vertical" size="small" style={{ marginBottom: 16 }}>
-              <Text type="secondary">
-                ????{selectedVersion.creator_name || '??'}
-              </Text>
-              <Text type="secondary">
-                ?????{new Date(selectedVersion.created_at).toLocaleString()}
-              </Text>
-            </Space>
-            <Divider />
-            <Paragraph>
-              <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
-                {selectedVersion.content}
-              </pre>
-            </Paragraph>
-          </div>
-        )}
-      </Modal>
-
-      {/* ??????? */}
-      <Modal
-        title="????"
-        open={compareModalVisible}
-        onCancel={() => {
-          setCompareModalVisible(false);
-          setCompareVersions({});
-          setCompareResult(null);
-        }}
-        footer={[
-          <Button
-            key="compare"
-            type="primary"
-            onClick={handleCompareVersions}
-            disabled={!compareVersions.version1 || !compareVersions.version2}
-            loading={loading}
-          >
-            ????
-          </Button>,
-          <Button
-            key="close"
-            onClick={() => {
-              setCompareModalVisible(false);
-              setCompareVersions({});
-              setCompareResult(null);
-            }}
-          >
-            ??
-          </Button>,
-        ]}
-        width={900}
-      >
-        {!compareResult ? (
-          <div>
-            <Paragraph>????????????</Paragraph>
-            <List
-              dataSource={versions}
-              renderItem={(version) => (
-                <List.Item
-                  key={version.id}
-                  actions={[
-                    <Button
-                      type={
-                        compareVersions.version1 === version.id ? 'primary' : 'default'
-                      }
-                      size="small"
-                      onClick={() => toggleCompareVersion(version.id, 'version1')}
-                    >
-                      {compareVersions.version1 === version.id ? '?????1' : '????1'}
-                    </Button>,
-                    <Button
-                      type={
-                        compareVersions.version2 === version.id ? 'primary' : 'default'
-                      }
-                      size="small"
-                      onClick={() => toggleCompareVersion(version.id, 'version2')}
-                    >
-                      {compareVersions.version2 === version.id ? '?????2' : '????2'}
-                    </Button>,
-                  ]}
-                >
-                  <List.Item.Meta
-                    title={
-                      <Space>
-                        <Tag color="blue">v{version.version_number}</Tag>
-                        <Text>{version.comment || '???'}</Text>
-                      </Space>
-                    }
-                    description={new Date(version.created_at).toLocaleString()}
-                  />
-                </List.Item>
-              )}
-            />
-          </div>
-        ) : (
-          <div className="compare-result">
-            <Space direction="vertical" size="large" style={{ width: '100%' }}>
-              <div>
-                <Title level={5}>????</Title>
-                <Space size="large">
-                  <div>
-                    <Tag color="blue">??1: v{compareResult.version1.version_number}</Tag>
-                    <Text>{compareResult.version1.comment}</Text>
-                  </div>
-                  <div>
-                    <Tag color="green">??2: v{compareResult.version2.version_number}</Tag>
-                    <Text>{compareResult.version2.comment}</Text>
-                  </div>
-                </Space>
-              </div>
-
-              {compareResult.differences.added.length > 0 && (
-                <div>
-                  <Title level={5}>
-                    <Tag color="success">????</Tag>
-                  </Title>
-                  <List
-                    size="small"
-                    dataSource={compareResult.differences.added}
-                    renderItem={(item) => (
-                      <List.Item>
-                        <Text type="success">{item}</Text>
-                      </List.Item>
-                    )}
-                  />
-                </div>
-              )}
-
-              {compareResult.differences.removed.length > 0 && (
-                <div>
-                  <Title level={5}>
-                    <Tag color="error">????</Tag>
-                  </Title>
-                  <List
-                    size="small"
-                    dataSource={compareResult.differences.removed}
-                    renderItem={(item) => (
-                      <List.Item>
-                        <Text type="danger" delete>
-                          {item}
-                        </Text>
-                      </List.Item>
-                    )}
-                  />
-                </div>
-              )}
-
-              {compareResult.differences.modified.length > 0 && (
-                <div>
-                  <Title level={5}>
-                    <Tag color="warning">????</Tag>
-                  </Title>
-                  <List
-                    size="small"
-                    dataSource={compareResult.differences.modified}
-                    renderItem={(item) => (
-                      <List.Item>
-                        <Text type="warning">{item}</Text>
-                      </List.Item>
-                    )}
-                  />
-                </div>
-              )}
-
-              {compareResult.differences.added.length === 0 &&
-                compareResult.differences.removed.length === 0 &&
-                compareResult.differences.modified.length === 0 && (
-                  <Empty description="??????????" />
-                )}
-            </Space>
-          </div>
-        )}
       </Modal>
     </div>
   );

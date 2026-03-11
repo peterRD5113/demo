@@ -14,6 +14,7 @@ interface ExportModalProps {
   visible: boolean;
   documentId: number;
   documentName: string;
+  userId: number;
   onClose: () => void;
 }
 
@@ -21,6 +22,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
   visible,
   documentId,
   documentName,
+  userId,
   onClose,
 }) => {
   const [loading, setLoading] = useState(false);
@@ -30,16 +32,16 @@ const ExportModal: React.FC<ExportModalProps> = ({
   const handleExportPDF = async () => {
     setLoading(true);
     try {
-      const result = await window.electron.ipcRenderer.invoke(
-        'export:pdf',
+      const result = await window.electronAPI.export.pdf(
         documentId,
         includeAnnotations,
         includeRisks
       );
-
       if (result.success) {
-        message.success('PDF 導出成功！文件已保存到下載目錄');
+        message.success('PDF 導出成功！');
         onClose();
+      } else if (result.message === '已取消儲存') {
+        // 使用者取消，不顯示錯誤
       } else {
         message.error(result.message || 'PDF 導出失敗');
       }
@@ -53,16 +55,17 @@ const ExportModal: React.FC<ExportModalProps> = ({
   const handleExportDOCX = async () => {
     setLoading(true);
     try {
-      const result = await window.electron.ipcRenderer.invoke(
-        'export:docx',
+      const result = await window.electronAPI.export.docx(
         documentId,
         includeAnnotations,
-        includeRisks
+        includeRisks,
+        userId
       );
-
       if (result.success) {
-        message.success('DOCX 導出成功！文件已保存到下載目錄');
+        message.success('DOCX 導出成功！');
         onClose();
+      } else if (result.message === '已取消儲存') {
+        // 使用者取消，不顯示錯誤
       } else {
         message.error(result.message || 'DOCX 導出失敗');
       }
@@ -76,11 +79,12 @@ const ExportModal: React.FC<ExportModalProps> = ({
   const handleExportReport = async () => {
     setLoading(true);
     try {
-      const result = await window.electron.ipcRenderer.invoke('export:report', documentId);
-
+      const result = await window.electronAPI.export.report(documentId, userId);
       if (result.success) {
-        message.success('審閱報告導出成功！文件已保存到下載目錄');
+        message.success('審閱報告導出成功！');
         onClose();
+      } else if (result.message === '已取消儲存') {
+        // 使用者取消，不顯示錯誤
       } else {
         message.error(result.message || '審閱報告導出失敗');
       }
@@ -188,7 +192,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
 
           <div className="export-note">
             <Text type="secondary" style={{ fontSize: '12px' }}>
-              💡 提示：導出的文件將保存到系統下載目錄，導出完成後會自動打開文件所在位置
+              提示：點擊導出後可選擇儲存位置，完成後會自動開啟檔案所在資料夾
             </Text>
           </div>
         </div>

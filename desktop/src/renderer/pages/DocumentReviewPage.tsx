@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Layout, Card, Spin, message, Typography, Divider, Empty, Tag, Button, Space } from 'antd';
+import { Layout, Card, Spin, message, Typography, Divider, Empty, Tag, Button, Space, Modal, Input, Select } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import { WarningOutlined, CheckCircleOutlined, HistoryOutlined, DownloadOutlined, SaveOutlined, SwapOutlined, MenuFoldOutlined, MenuUnfoldOutlined, SyncOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
@@ -64,6 +64,14 @@ const DocumentReviewPage: React.FC = () => {
   const [latestVersion, setLatestVersion] = useState<any>(null);
   const [versionClauses, setVersionClauses] = useState<Clause[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // 對照版本選擇相關
+  const [versionList, setVersionList] = useState<any[]>([]);
+  const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null);
+  const [versionClausesLoading, setVersionClausesLoading] = useState(false);
+
+  // 儲存版本 Modal 相關狀態
+  const [showSaveVersionModal, setShowSaveVersionModal] = useState(false);
+  const [saveVersionSummary, setSaveVersionSummary] = useState('');
 
   // 滚动同步相关
   const leftRef = useRef<HTMLDivElement>(null);
@@ -253,21 +261,28 @@ const DocumentReviewPage: React.FC = () => {
     }
   };
 
-  const handleSaveVersion = async () => {
-    if (!token || !documentId) return;
+  const handleSaveVersion = () => {
+    setShowSaveVersionModal(true);
+  };
 
+  const handleConfirmSaveVersion = async () => {
+    if (!token || !documentId) return;
+    if (!saveVersionSummary.trim()) {
+      message.warning('請輸入變更摘要');
+      return;
+    }
     try {
       const tokenPayload = JSON.parse(atob(token.split('.')[1]));
       const userId = tokenPayload.userId;
-
       const response = await window.electronAPI.version.create(
         parseInt(documentId),
         userId,
-        `手動保存 - ${new Date().toLocaleString()}`
+        saveVersionSummary.trim()
       );
-
       if (response.success) {
-        message.success('版本保存成功');
+        message.success(`版本 v${response.data?.version_number} 已儲存`);
+        setShowSaveVersionModal(false);
+        setSaveVersionSummary('');
       } else {
         message.error(response.message || '保存版本失敗');
       }
@@ -278,56 +293,79 @@ const DocumentReviewPage: React.FC = () => {
   };
 
   // ============= 对照修订相关函数 =============
-  
-  // 加载最新版本
-  const loadLatestVersion = async () => {
+
+  // 載入版本清單並設定預設對照版本（方案C）
+  const loadVersionsForComparison = async () => {
     if (!token || !documentId) return;
 
     try {
       const tokenPayload = JSON.parse(atob(token.split('.')[1]));
       const userId = tokenPayload.userId;
 
-      // 获取最新版本
-      const versionResponse = await window.electronAPI.version.getLatest(
+      // 取得完整版本清單
+      const listResponse = await window.electronAPI.version.getList(
         parseInt(documentId),
         userId
       );
 
-      if (versionResponse.success && versionResponse.data) {
-        setLatestVersion(versionResponse.data);
+      if (!listResponse.success || !listResponse.data || listResponse.data.length === 0) {
+        setVersionList([]);
+        setSelectedVersionId(null);
+        setVersionClauses(clauses);
+        return;
+      }
 
-        // 获取版本的条款
-        const clausesResponse = await window.electronAPI.version.getClauses(
-          versionResponse.data.id,
-          userId
-        );
+      const versions = listResponse.data;
+      setVersionList(versions);
 
-        if (clausesResponse.success && clausesResponse.data) {
-          // getClauses 回傳 { items: [], total: N }，需要取 items
-          const clauseItems = Array.isArray(clausesResponse.data)
-            ? clausesResponse.data
-            : (clausesResponse.data.items || clausesResponse.data || []);
-          setVersionClauses(clauseItems);
-        } else {
-          // 取版本條款失敗 → 以當前條款代替
-          setVersionClauses(clauses);
-        }
+      // 預設選次新版本（versions[1]），若只有一個版本則選 v1（versions[0]）
+      const defaultVersion = versions.length >= 2 ? versions[1] : versions[0];
+      setLatestVersion(defaultVersion);
+      setSelectedVersionId(defaultVersion.id);
+
+      // 載入預設版本的條款
+      await loadVersionClausesById(defaultVersion.id, userId);
+    } catch (error) {
+      console.error('加载版本清单失败:', error);
+      message.error('加载版本清单失败');
+    }
+  };
+
+  // 根據版本 ID 載入條款（供選擇器切換時使用）
+  const loadVersionClausesById = async (versionId: number, userIdOverride?: number) => {
+    if (!token) return;
+    setVersionClausesLoading(true);
+    try {
+      const userId = userIdOverride ?? JSON.parse(atob(token.split('.')[1])).userId;
+      const clausesResponse = await window.electronAPI.version.getClauses(versionId, userId);
+      if (clausesResponse.success && clausesResponse.data) {
+        const clauseItems = Array.isArray(clausesResponse.data)
+          ? clausesResponse.data
+          : (clausesResponse.data.items || clausesResponse.data || []);
+        setVersionClauses(clauseItems);
       } else {
-        // 沒有已保存版本 → 左側直接顯示當前條款（視為「原始版本」）
-        setLatestVersion(null);
         setVersionClauses(clauses);
       }
     } catch (error) {
-      console.error('加载版本失败:', error);
-      message.error('加载版本失败');
+      console.error('加载版本条款失败:', error);
+      setVersionClauses(clauses);
+    } finally {
+      setVersionClausesLoading(false);
     }
+  };
+
+  // 切換對照版本（Select 選擇器 onChange）
+  const handleVersionSelectChange = async (versionId: number) => {
+    const selected = versionList.find(v => v.id === versionId);
+    setSelectedVersionId(versionId);
+    setLatestVersion(selected || null);
+    await loadVersionClausesById(versionId);
   };
 
   // 切换对照模式
   const toggleComparisonMode = async () => {
     if (!isComparisonMode) {
-      // 进入对照模式：加载最新版本
-      await loadLatestVersion();
+      await loadVersionsForComparison();
     }
     setIsComparisonMode(!isComparisonMode);
   };
@@ -754,7 +792,7 @@ const DocumentReviewPage: React.FC = () => {
               ) : (
                 // ========== 双栏对照模式 ==========
                 <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                  {/* 左栏：最新版本 */}
+                  {/* 左栏：对照版本 */}
                   <div 
                     ref={leftRef}
                     onScroll={handleLeftScroll}
@@ -776,17 +814,24 @@ const DocumentReviewPage: React.FC = () => {
                       marginBottom: '16px',
                       borderBottom: '2px solid #1890ff'
                     }}>
-                      <Title level={4} style={{ margin: 0 }}>
-                        {latestVersion ? `版本 ${latestVersion.version_number}（已保存）` : '原始版本'}
+                      <Title level={4} style={{ margin: 0, marginBottom: 8 }}>
+                        對照基準版本
                       </Title>
-                      {latestVersion ? (
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {new Date(latestVersion.created_at).toLocaleString()}
-                        </Text>
-                      ) : (
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          尚未保存任何版本，顯示當前內容作為參考
-                        </Text>
+                      <Select
+                        style={{ width: '100%' }}
+                        value={selectedVersionId}
+                        onChange={handleVersionSelectChange}
+                        loading={versionClausesLoading}
+                        options={versionList.map(v => ({
+                          value: v.id,
+                          label: `v${v.version_number} · ${v.change_summary || '（無摘要）'} · ${new Date(v.created_at).toLocaleDateString()}`
+                        }))}
+                      />
+                      {selectedVersionId && versionList.length > 0 &&
+                        selectedVersionId === versionList[0]?.id && (
+                        <div style={{ marginTop: 8, color: '#faad14', fontSize: '12px' }}>
+                          ⚠ 此為最新保存版本，與右側當前內容相同，可能無差異可對照
+                        </div>
                       )}
                     </div>
                     
@@ -996,14 +1041,44 @@ const DocumentReviewPage: React.FC = () => {
         />
       )}
 
-      {document && (
-        <ExportModal
-          visible={showExportModal}
-          documentId={document.id}
-          documentName={document.name}
-          onClose={() => setShowExportModal(false)}
+      {document && token && (() => {
+        let userId = 0;
+        try { userId = JSON.parse(atob(token.split('.')[1])).userId; } catch (_) {}
+        return (
+          <ExportModal
+            visible={showExportModal}
+            documentId={document.id}
+            documentName={document.name}
+            userId={userId}
+            onClose={() => setShowExportModal(false)}
+          />
+        );
+      })()}
+
+      <Modal
+        title="儲存版本"
+        open={showSaveVersionModal}
+        onOk={handleConfirmSaveVersion}
+        onCancel={() => {
+          setShowSaveVersionModal(false);
+          setSaveVersionSummary('');
+        }}
+        okText="儲存"
+        cancelText="取消"
+      >
+        <div style={{ marginBottom: 8 }}>
+          <Text>請輸入本次版本的變更摘要：</Text>
+        </div>
+        <Input.TextArea
+          rows={4}
+          placeholder="例如：修正付款條款措辭、補充違約責任定義..."
+          value={saveVersionSummary}
+          onChange={(e) => setSaveVersionSummary(e.target.value)}
+          maxLength={200}
+          showCount
+          autoFocus
         />
-      )}
+      </Modal>
     </Layout>
   );
 };

@@ -7,6 +7,7 @@
 import { documentRepository, projectRepository } from '@main/repositories';
 import { documentParserService } from './DocumentParserService';
 import { riskService } from './RiskService';
+import { versionService } from './VersionService';
 import type { Document } from '@shared/types';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -121,6 +122,14 @@ class DocumentService {
         if (riskResult.success) {
           console.log(`風險識別完成，發現 ${riskResult.risksFound} 個風險`);
           
+          // 自動建立初始版本快照
+          try {
+            await versionService.createVersion(documentId, data.userId, '初始版本（匯入時自動建立）');
+            console.log(`初始版本建立完成`);
+          } catch (_ve) {
+            console.warn('初始版本建立失敗，不影響文件匯入:', _ve);
+          }
+
           return {
             success: true,
             message: `Document processed successfully: ${parseResult.clauseCount} clauses extracted, ${riskResult.risksFound} risks identified`,
@@ -129,6 +138,14 @@ class DocumentService {
         } else {
           console.warn(`風險識別失敗: ${riskResult.message}`);
           
+          // 風險識別失敗仍建立初始版本
+          try {
+            await versionService.createVersion(documentId, data.userId, '初始版本（匯入時自動建立）');
+            console.log(`初始版本建立完成`);
+          } catch (_ve) {
+            console.warn('初始版本建立失敗，不影響文件匯入:', _ve);
+          }
+
           return {
             success: true,
             message: `Document parsed successfully (${parseResult.clauseCount} clauses), but risk identification failed: ${riskResult.message}`,

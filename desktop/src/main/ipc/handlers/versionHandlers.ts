@@ -52,6 +52,27 @@ class VersionHandlers {
       }
     );
 
+    // 获取次新版本信息（对照修订用）
+    ipcMain.handle(
+      'version:getPrevious',
+      async (_event: IpcMainInvokeEvent, documentId: number, userId: number) => {
+        try {
+          const version = await versionService.getPreviousVersion(documentId, userId);
+          return {
+            success: true,
+            message: version ? '获取次新版本成功' : '无次新版本',
+            data: version
+          };
+        } catch (error) {
+          console.error('获取次新版本失败:', error);
+          return {
+            success: false,
+            message: error instanceof Error ? error.message : '获取次新版本失败'
+          };
+        }
+      }
+    );
+
     // 获取指定版本的所有条款
     ipcMain.handle(
       'version:getClauses',
@@ -133,6 +154,26 @@ class VersionHandlers {
           return {
             success: false,
             message: error instanceof Error ? error.message : '获取对照数据失败'
+          };
+        }
+      }
+    );
+
+    // 刪除指定版本
+    ipcMain.handle(
+      'version:delete',
+      async (_event: IpcMainInvokeEvent, versionId: number, userId: number) => {
+        try {
+          await versionService.deleteVersion(versionId, userId);
+          return {
+            success: true,
+            message: '版本已刪除'
+          };
+        } catch (error) {
+          console.error('刪除版本失敗:', error);
+          return {
+            success: false,
+            message: error instanceof Error ? error.message : '刪除版本失敗'
           };
         }
       }
