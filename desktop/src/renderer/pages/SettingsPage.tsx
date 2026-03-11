@@ -77,6 +77,10 @@ const SettingsPage: React.FC = () => {
   };
 
   const handleClearClick = () => {
+    if (!cacheInfo) {
+      message.warning('緩存信息尚未載入，請稍後再試');
+      return;
+    }
     if (!clearOptions.clearAuditLogs && !clearOptions.clearDeletedProjects && !clearOptions.clearRiskMatches) {
       message.warning('請至少選擇一項清理內容');
       return;
