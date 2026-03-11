@@ -1,11 +1,18 @@
 /* 設置頁面樣式 */
 .settings-layout {
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
   background-color: #f0f2f5;
 }
 
 .settings-content {
+  flex: 1;
+  overflow-y: auto;
   padding: 24px;
+}
+
+.settings-content-inner {
   max-width: 800px;
   margin: 0 auto;
 }

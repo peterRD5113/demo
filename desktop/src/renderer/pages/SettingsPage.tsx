@@ -118,6 +118,7 @@ const SettingsPage: React.FC = () => {
     <Layout className="settings-layout">
       <AppHeader />
       <Content className="settings-content">
+        <div className="settings-content-inner">
         <Card title="User Settings" bordered={false}>
           <Form
             form={form}
@@ -283,6 +284,7 @@ const SettingsPage: React.FC = () => {
             </div>
           )}
         </Card>
+        </div>
       </Content>
     </Layout>
   );

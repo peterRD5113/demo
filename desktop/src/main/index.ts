@@ -4,7 +4,7 @@
  * Electron main process initialization
  */
 
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu } from 'electron';
 import * as path from 'path';
 import { initDatabase } from './database/connection';
 
@@ -26,6 +26,9 @@ function createWindow(): void {
       contextIsolation: true,
     },
   });
+
+  // Remove native menu bar
+  Menu.setApplicationMenu(null);
 
   console.log('Window created, loading HTML...');
   const htmlPath = path.join(__dirname, '../renderer/index.html');
